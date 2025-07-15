@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -26,8 +26,10 @@ export function GraphVisualization({
         orbitControls?: OrbitControls,
         dragControls?: DragControls,
         clusterCenterMeshes: THREE.Mesh[],
+        animationFrameId?: number,
     }>({ clusterCenterMeshes: [] });
 
+    // One-time setup for scene, camera, renderer, world
     useEffect(() => {
         if (!containerRef.current || stateRef.current.renderer) return;
 
@@ -61,7 +63,7 @@ export function GraphVisualization({
         const orbitControls = new OrbitControls(camera, renderer.domElement);
         orbitControls.enableDamping = true;
         stateRef.current.orbitControls = orbitControls;
-
+        
         const handleResize = () => {
             if (!renderer || !camera) return;
             camera.aspect = container.clientWidth / container.clientHeight;
@@ -73,12 +75,17 @@ export function GraphVisualization({
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const handleCanvasClick = (event: MouseEvent) => {
-            if (event.target !== renderer.domElement) return;
-            const rect = container.getBoundingClientRect();
+            const rendererEl = stateRef.current.renderer?.domElement;
+            if (!rendererEl || event.target !== rendererEl) return;
+            const rect = rendererEl.getBoundingClientRect();
             mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
             mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(nodes.map(n => n.mesh));
+            
+            const nodeMeshes = nodes.map(n => n.mesh).filter(Boolean);
+            if (nodeMeshes.length === 0) return;
+
+            const intersects = raycaster.intersectObjects(nodeMeshes);
             if (intersects.length > 0) {
                 const intersectedNode = nodes.find(n => n.mesh === intersects[0].object);
                 if (intersectedNode) {
@@ -87,14 +94,31 @@ export function GraphVisualization({
             }
         };
         container.addEventListener('click', handleCanvasClick);
-        
+
+        return () => {
+            if(stateRef.current.animationFrameId) cancelAnimationFrame(stateRef.current.animationFrameId);
+            window.removeEventListener('resize', handleResize);
+            if(container) container.removeEventListener('click', handleCanvasClick);
+            if(renderer && container) container.removeChild(renderer.domElement);
+            // Dispose Three.js objects
+            stateRef.current.renderer = undefined;
+        };
+    }, [setScene, setWorld, nodes, handleNodeClick]);
+
+    // Animation loop
+    useEffect(() => {
+        const { renderer, camera, orbitControls } = stateRef.current;
+        const localWorld = world;
+        const localScene = scene;
+
+        if (!renderer || !camera || !orbitControls || !localWorld || !localScene) return;
+
         const timeStep = 1 / 60;
         const animate = () => {
-            requestAnimationFrame(animate);
+            stateRef.current.animationFrameId = requestAnimationFrame(animate);
             orbitControls.update();
 
-            if (physicsEnabled && localWorld) {
-                // Physics calculations...
+            if (physicsEnabled) {
                 edges.forEach(edge => {
                     const { startNode, endNode } = edge;
                     if (!startNode.physicsBody || !endNode.physicsBody) return;
@@ -108,14 +132,14 @@ export function GraphVisualization({
                 });
 
                 nodes.forEach(nodeA => {
-                    if (clusterBy !== 'none' && clusterCenters[nodeA.properties[clusterBy]]) {
+                    if (clusterBy !== 'none' && nodeA.properties[clusterBy] && clusterCenters[nodeA.properties[clusterBy]]) {
                          const center = clusterCenters[nodeA.properties[clusterBy]];
                          const force = center.vsub(nodeA.physicsBody.position);
                          force.scale(settings.clusterAttraction, force);
                          nodeA.physicsBody.applyForce(force, nodeA.physicsBody.position);
                     }
                      nodes.forEach(nodeB => {
-                        if (nodeA === nodeB) return;
+                        if (nodeA === nodeB || !nodeA.physicsBody || !nodeB.physicsBody) return;
                         const vec = nodeA.physicsBody.position.vsub(nodeB.physicsBody.position);
                         const distSq = vec.lengthSquared();
                         if (distSq > 0) {
@@ -129,33 +153,41 @@ export function GraphVisualization({
                 
                 localWorld.step(timeStep);
                 nodes.forEach(n => {
-                    n.mesh.position.copy(n.physicsBody.position as any);
-                    n.mesh.quaternion.copy(n.physicsBody.quaternion as any);
+                    if (n.mesh && n.physicsBody) {
+                        n.mesh.position.copy(n.physicsBody.position as any);
+                        n.mesh.quaternion.copy(n.physicsBody.quaternion as any);
+                    }
                 });
             }
 
             edges.forEach(e => {
-                const pos = e.mesh.geometry.attributes.position;
-                pos.setXYZ(0, e.startNode.mesh.position.x, e.startNode.mesh.position.y, e.startNode.mesh.position.z);
-                pos.setXYZ(1, e.endNode.mesh.position.x, e.endNode.mesh.position.y, e.endNode.mesh.position.z);
-                pos.needsUpdate = true;
+                if (e.mesh && e.startNode.mesh && e.endNode.mesh) {
+                    const pos = e.mesh.geometry.attributes.position;
+                    pos.setXYZ(0, e.startNode.mesh.position.x, e.startNode.mesh.position.y, e.startNode.mesh.position.z);
+                    pos.setXYZ(1, e.endNode.mesh.position.x, e.endNode.mesh.position.y, e.endNode.mesh.position.z);
+                    pos.needsUpdate = true;
+                }
             });
             
             stateRef.current.clusterCenterMeshes.forEach(mesh => mesh.lookAt(camera.position));
             renderer.render(localScene, camera);
         };
+        
         animate();
 
         return () => {
-            window.removeEventListener('resize', handleResize);
-            container.removeEventListener('click', handleCanvasClick);
-            container.removeChild(renderer.domElement);
-            // Dispose Three.js objects
+            if (stateRef.current.animationFrameId) {
+                cancelAnimationFrame(stateRef.current.animationFrameId);
+            }
         };
-    }, [setScene, setWorld]);
 
+    }, [scene, world, nodes, edges, settings, physicsEnabled, clusterBy, clusterCenters]);
+
+
+    // Drag controls
     useEffect(() => {
-        if (!stateRef.current.renderer || !stateRef.current.camera) return;
+        if (!stateRef.current.renderer || !stateRef.current.camera || !nodes.length) return;
+        
         if (stateRef.current.dragControls) {
             stateRef.current.dragControls.dispose();
         }
@@ -167,12 +199,12 @@ export function GraphVisualization({
                 const node = nodes.find(n => n.mesh === e.object);
                 if (node) {
                     handleNodeClick(node.id);
-                    if (physicsEnabled) node.physicsBody.type = CANNON.Body.STATIC;
+                    if (physicsEnabled && node.physicsBody) node.physicsBody.type = CANNON.Body.STATIC;
                 }
             });
             dragControls.addEventListener('drag', (e) => {
                 const node = nodes.find(n => n.mesh === e.object);
-                if (node && physicsEnabled) {
+                if (node && physicsEnabled && node.physicsBody) {
                     node.physicsBody.position.copy(e.object.position as any);
                     node.physicsBody.velocity.set(0,0,0);
                 }
@@ -180,18 +212,24 @@ export function GraphVisualization({
             dragControls.addEventListener('dragend', (e) => {
                 if(stateRef.current.orbitControls) stateRef.current.orbitControls.enabled = true;
                 const node = nodes.find(n => n.mesh === e.object);
-                if (node && physicsEnabled) {
+                if (node && physicsEnabled && node.physicsBody) {
                     node.physicsBody.type = CANNON.Body.DYNAMIC;
                     node.physicsBody.wakeUp();
                 }
             });
             stateRef.current.dragControls = dragControls;
         }
+
+        return () => {
+            stateRef.current.dragControls?.dispose();
+        }
+
     }, [nodes, physicsEnabled, handleNodeClick]);
     
     // Node style updates
     useEffect(() => {
         nodes.forEach(node => {
+            if (!node.mesh) return;
             // Color
             const value = node.properties[colorBy];
             const color = colorBy === 'none' ? 0xcccccc : (propertyColorMap[colorBy]?.[value] || 0x4b5563);
@@ -206,6 +244,7 @@ export function GraphVisualization({
     // Edge style updates
     useEffect(() => {
         edges.forEach(edge => {
+            if (!edge.mesh) return;
             let color = defaultEdgeColor;
             let width = 1;
             let opacity = 0.7;
