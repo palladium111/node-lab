@@ -83,7 +83,7 @@ export function TopControls({
                         <Menu />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuContent className="w-56 bg-card/80 backdrop-blur-sm" align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
@@ -106,7 +106,7 @@ export function TopControls({
                             <FileJson className="mr-2 h-4 w-4" />
                             <span>Export</span>
                         </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent>
+                        <DropdownMenuSubContent className="bg-card/80 backdrop-blur-sm">
                              <DropdownMenuItem onClick={() => downloadJSON(nodes, edges)}>
                                 <FileJson className="mr-2 h-4 w-4" />
                                 <span>Export as JSON</span>
@@ -126,7 +126,7 @@ export function TopControls({
                         <Settings />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-64" align="end">
+                <DropdownMenuContent className="w-64 bg-card/80 backdrop-blur-sm" align="end">
                     <DropdownMenuLabel>Settings</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                      <DropdownMenuGroup>
@@ -144,7 +144,7 @@ export function TopControls({
                                 <SlidersHorizontal className="mr-2 h-4 w-4" />
                                 <span>Physics</span>
                             </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent className="w-64 p-2 space-y-4">
+                            <DropdownMenuSubContent className="w-64 p-2 space-y-4 bg-card/80 backdrop-blur-sm">
                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                     <SliderControl label="Cluster Attraction" id="attraction" value={settings.clusterAttraction} min={0} max={3} step={0.1} onValueChange={(v:any) => handleSettingsChange({ clusterAttraction: v })} displayTransform={(v:any) => v.toFixed(2)} />
                                 </DropdownMenuItem>
@@ -168,7 +168,7 @@ export function TopControls({
                                 <BrainCircuit className="mr-2 h-4 w-4" />
                                 <span>Generation</span>
                             </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent className="w-64 p-2 space-y-4">
+                            <DropdownMenuSubContent className="w-64 p-2 space-y-4 bg-card/80 backdrop-blur-sm">
                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                     <div className="px-2 w-full space-y-2">
                                         <Label className="text-xs">Cluster Layout</Label>
