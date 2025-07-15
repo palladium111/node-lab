@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -21,7 +22,7 @@ export function TopControls({
 
     return (
         <div className={cn("absolute top-0 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-10 transition-transform duration-300 ease-in-out", {
-            'transform -translate-y-[calc(100%-40px)] -translate-x-1/2': isCollapsed
+            'transform -translate-y-[calc(100%-48px)] -translate-x-1/2': isCollapsed
         })}>
             <div className="bg-card/80 backdrop-blur-sm shadow-lg rounded-b-xl">
                 <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -56,27 +57,28 @@ export function TopControls({
                     <div className="control-group">
                         <h4 className="mb-2 text-xs font-bold uppercase text-muted-foreground">Actions</h4>
                         <div className="grid grid-cols-2 gap-2">
-                            <Button variant="outline" onClick={() => addNode()}><Plus /> Add</Button>
-                            <Button variant="outline" onClick={() => removeNode()}><Trash2 /> Remove</Button>
-                            <Button variant={isConnecting ? "default" : "outline"} onClick={() => toggleConnectionMode()}><Link /></Button>
-                            <Button variant="outline" onClick={() => setPhysicsEnabled(!physicsEnabled)} className={cn({'text-green-500 border-green-500 hover:text-green-600': physicsEnabled})}>
+                            <Button variant="outline" size="default" onClick={() => addNode()}><Plus /> Add</Button>
+                            <Button variant="outline" size="default" onClick={() => removeNode()}><Trash2 /> Remove</Button>
+                            <Button variant={isConnecting ? "default" : "outline"} size="default" onClick={() => toggleConnectionMode()}><Link /></Button>
+                            <Button variant="outline" size="default" onClick={() => setPhysicsEnabled(!physicsEnabled)} className={cn({'text-green-500 border-green-500 hover:text-green-600': physicsEnabled})}>
                                 {physicsEnabled ? <Pause /> : <Play />}
                             </Button>
-                            <Button variant="outline" onClick={() => setSettingsModalOpen(true)}><Settings /></Button>
+                            <Button variant="outline" size="default" onClick={() => setSettingsModalOpen(true)}><Settings /></Button>
                         </div>
                     </div>
                     <div className="control-group">
                         <h4 className="mb-2 text-xs font-bold uppercase text-muted-foreground">Export</h4>
                         <div className="grid grid-cols-2 gap-2">
-                             <Button variant="outline" size="sm" onClick={() => downloadJSON(nodes, edges)}><FileJson /> JSON</Button>
-                             <Button variant="outline" size="sm" onClick={() => downloadCSV(nodes, edges)}><FileText /> CSV</Button>
+                             <Button variant="outline" size="default" onClick={() => downloadJSON(nodes, edges)}><FileJson /> JSON</Button>
+                             <Button variant="outline" size="default" onClick={() => downloadCSV(nodes, edges)}><FileText /> CSV</Button>
                         </div>
                     </div>
                 </div>
                 <div 
-                    className="h-10 bg-card/50 cursor-pointer flex items-center justify-center text-muted-foreground hover:bg-muted rounded-b-xl"
+                    className="h-12 bg-card/50 cursor-pointer flex items-center justify-center text-muted-foreground hover:bg-muted rounded-b-xl"
                     onClick={() => setIsCollapsed(!isCollapsed)}
                 >
+                    <span className="font-medium mr-2">Controls</span>
                     {isCollapsed ? <ChevronDown /> : <ChevronUp />}
                 </div>
             </div>

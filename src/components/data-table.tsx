@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -18,12 +19,13 @@ export function DataTable({ nodes, edges, selectedNode, setSelectedNodeId, updat
 
     return (
         <div className={cn("absolute bottom-0 left-0 w-full z-10 transition-transform duration-300 ease-in-out", {
-            'transform translate-y-[calc(100%-40px)]': isCollapsed
+            'transform translate-y-[calc(100%-48px)]': isCollapsed
         })}>
             <div 
-                className="h-10 bg-card/80 backdrop-blur-sm cursor-pointer flex items-center justify-center text-muted-foreground hover:bg-muted rounded-t-xl border-t border-b-0 border-border"
+                className="h-12 bg-card/80 backdrop-blur-sm cursor-pointer flex items-center justify-center text-muted-foreground hover:bg-muted rounded-t-xl border-t border-b-0 border-border"
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
+                <span className="font-medium mr-2">Data Table</span>
                 {isCollapsed ? <ChevronUp /> : <ChevronDown />}
             </div>
             <div className="h-[35vh] overflow-auto bg-card/80 backdrop-blur-sm">
@@ -50,11 +52,11 @@ export function DataTable({ nodes, edges, selectedNode, setSelectedNodeId, updat
                                         }
                                     }}
                                 >
-                                    <TableCell><Input className="bg-transparent border-0" value={node.name} onChange={e => handlePropertyChange(node.id, 'name', e.target.value)} /></TableCell>
-                                    <TableCell><Input className="bg-transparent border-0" value={node.properties.city || ''} onChange={e => handlePropertyChange(node.id, 'city', e.target.value)} /></TableCell>
-                                    <TableCell><Input className="bg-transparent border-0" value={node.properties.language || ''} onChange={e => handlePropertyChange(node.id, 'language', e.target.value)} /></TableCell>
-                                    <TableCell><Input className="bg-transparent border-0" value={node.properties.team || ''} onChange={e => handlePropertyChange(node.id, 'team', e.target.value)} /></TableCell>
-                                    <TableCell className="text-muted-foreground">{connectionNames || 'None'}</TableCell>
+                                    <TableCell className="py-1 px-4"><Input className="bg-transparent border-0" value={node.name} onChange={e => handlePropertyChange(node.id, 'name', e.target.value)} /></TableCell>
+                                    <TableCell className="py-1 px-4"><Input className="bg-transparent border-0" value={node.properties.city || ''} onChange={e => handlePropertyChange(node.id, 'city', e.target.value)} /></TableCell>
+                                    <TableCell className="py-1 px-4"><Input className="bg-transparent border-0" value={node.properties.language || ''} onChange={e => handlePropertyChange(node.id, 'language', e.target.value)} /></TableCell>
+                                    <TableCell className="py-1 px-4"><Input className="bg-transparent border-0" value={node.properties.team || ''} onChange={e => handlePropertyChange(node.id, 'team', e.target.value)} /></TableCell>
+                                    <TableCell className="py-1 px-4 text-muted-foreground">{connectionNames || 'None'}</TableCell>
                                 </TableRow>
                              )
                         })}
