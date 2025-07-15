@@ -234,31 +234,20 @@ export function useGraphState() {
     
     const propertyColorMap = useMemo(() => {
         const map: Record<string, Record<string, string>> = {};
-        if (colorBy === 'none') return map;
+        const allProperties = ['city', 'language', 'team'];
 
-        const uniqueValues = new Map<string, string[]>();
-        nodes.forEach(n => {
-            const value = n.properties[colorBy];
-            if (value !== undefined) {
-                if (!uniqueValues.has(colorBy)) {
-                    uniqueValues.set(colorBy, []);
-                }
-                if (!uniqueValues.get(colorBy)!.includes(value)) {
-                    uniqueValues.get(colorBy)!.push(value);
-                }
+        allProperties.forEach(prop => {
+            const uniqueValues = Array.from(new Set(nodes.map(n => n.properties[prop]).filter(v => v !== undefined)));
+            if (uniqueValues.length > 0) {
+                map[prop] = {};
+                uniqueValues.forEach((value, index) => {
+                    map[prop][value] = '#' + colorPalette[index % colorPalette.length].toString(16).padStart(6, '0');
+                });
             }
         });
-
-        if (uniqueValues.has(colorBy)) {
-             map[colorBy] = {};
-             uniqueValues.get(colorBy)!.forEach((value, index) => {
-                map[colorBy][value] = '#' + colorPalette[index % colorPalette.length].toString(16).padStart(6, '0');
-            });
-        }
         
         return map;
-
-    }, [nodes, colorBy]);
+    }, [nodes]);
 
     const clusterCenters = useMemo(() => {
         const centers: { [key: string]: CANNON.Vec3 } = {};
@@ -316,5 +305,3 @@ export function useGraphState() {
         regenerateEdges: doRegenerateEdges
     };
 }
-
-    
