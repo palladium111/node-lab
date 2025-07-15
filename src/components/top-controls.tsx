@@ -46,17 +46,16 @@ export function TopControls({
     }
 
     return (
-        <div className="absolute top-4 right-4 z-10">
+        <div className="absolute top-4 right-4 z-10 flex gap-2">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="icon" className="bg-card/80 backdrop-blur-sm">
-                        <Settings />
+                        <Share2 />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
-                    <DropdownMenuLabel>Controls</DropdownMenuLabel>
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    
                     <DropdownMenuGroup>
                         <DropdownMenuItem onClick={() => setAddNodeModalOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
@@ -64,45 +63,13 @@ export function TopControls({
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => removeNode()}>
                             <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Remove Node</span>
+                            <span>Remove Selected Node</span>
                         </DropdownMenuItem>
                          <DropdownMenuItem onClick={() => toggleConnectionMode()}>
                             <Link className="mr-2 h-4 w-4" />
                             <span>{isConnecting ? 'Cancel Connection' : 'Connect Nodes'}</span>
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
-                    
-                    <DropdownMenuSeparator />
-
-                     <DropdownMenuGroup>
-                        <DropdownMenuItem onClick={handleLabelToggle}>
-                           <Text className="mr-2 h-4 w-4" />
-                           <span>{settings.showNodeLabels ? 'Hide Labels' : 'Show Labels'}</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setPhysicsEnabled(!physicsEnabled)}>
-                            {physicsEnabled ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-                            <span>{physicsEnabled ? 'Pause Physics' : 'Resume Physics'}</span>
-                        </DropdownMenuItem>
-                        
-                        <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                                <BrainCircuit className="mr-2 h-4 w-4" />
-                                <span>Advanced Settings</span>
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                                 <DropdownMenuItem onClick={() => setPhysicsSettingsModalOpen(true)}>
-                                    <SlidersHorizontal className="mr-2 h-4 w-4" />
-                                    <span>Physics</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setGenerationSettingsModalOpen(true)}>
-                                    <Share2 className="mr-2 h-4 w-4" />
-                                    <span>Generation</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                    </DropdownMenuGroup>
-
-
                     <DropdownMenuSeparator />
                     <DropdownMenuSub>
                          <DropdownMenuSubTrigger>
@@ -120,7 +87,44 @@ export function TopControls({
                             </DropdownMenuItem>
                         </DropdownMenuSubContent>
                     </DropdownMenuSub>
+                </DropdownMenuContent>
+            </DropdownMenu>
 
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="bg-card/80 backdrop-blur-sm">
+                        <Settings />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end">
+                    <DropdownMenuLabel>Settings</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                     <DropdownMenuGroup>
+                        <DropdownMenuItem onClick={handleLabelToggle}>
+                           <Text className="mr-2 h-4 w-4" />
+                           <span>{settings.showNodeLabels ? 'Hide Labels' : 'Show Labels'}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setPhysicsEnabled(!physicsEnabled)}>
+                            {physicsEnabled ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+                            <span>{physicsEnabled ? 'Pause Physics' : 'Resume Physics'}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                                <BrainCircuit className="mr-2 h-4 w-4" />
+                                <span>Advanced Settings</span>
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                                 <DropdownMenuItem onClick={() => setPhysicsSettingsModalOpen(true)}>
+                                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                    <span>Physics</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setGenerationSettingsModalOpen(true)}>
+                                    <Share2 className="mr-2 h-4 w-4" />
+                                    <span>Generation</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                    </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
