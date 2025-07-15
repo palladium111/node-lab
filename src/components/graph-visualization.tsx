@@ -202,7 +202,6 @@ export function GraphVisualization({
                 if(stateRef.current.orbitControls) stateRef.current.orbitControls.enabled = false;
                 const node = nodes.find(n => n.mesh === e.object);
                 if (node) {
-                    handleNodeClick(node.id);
                     if (physicsEnabled && node.physicsBody) node.physicsBody.type = CANNON.Body.STATIC;
                 }
             });
