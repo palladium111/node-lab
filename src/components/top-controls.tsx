@@ -14,7 +14,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
-  DropdownMenuSubContent
+  DropdownMenuSubContent,
+  DropdownMenuGroup
 } from "@/components/ui/dropdown-menu";
 
 type TopControlsProps = Pick<
