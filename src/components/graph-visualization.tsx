@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useRef, useEffect, useCallback } from 'react';
@@ -66,10 +65,12 @@ export function GraphVisualization({
 
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
+        
         const handleCanvasClick = (event: MouseEvent) => {
             const rendererEl = stateRef.current.renderer?.domElement;
             if (!rendererEl || event.target !== rendererEl) return;
-            // Prevent click handling during a drag operation
+            // Prevent click handling during a drag or orbit operation
+            if (stateRef.current.dragControls?.getObjects().length > 0 && stateRef.current.dragControls.enabled) return;
             if (stateRef.current.orbitControls?.state !== -1) return;
 
             const rect = rendererEl.getBoundingClientRect();
@@ -78,14 +79,14 @@ export function GraphVisualization({
             raycaster.setFromCamera(mouse, camera);
             
             const nodeMeshes = nodes.map(n => n.mesh).filter(Boolean);
-            if (nodeMeshes.length === 0) return;
+            if (nodeMeshes.length === 0) {
+                 handleNodeClick(null);
+                 return;
+            };
 
             const intersects = raycaster.intersectObjects(nodeMeshes as THREE.Mesh[]);
             if (intersects.length > 0) {
-                const intersectedNode = nodes.find(n => n.mesh === intersects[0].object);
-                if (intersectedNode) {
-                    handleNodeClick(intersectedNode.id);
-                }
+                // This is handled by DragControls click event now
             } else {
                  handleNodeClick(null);
             }
@@ -195,6 +196,7 @@ export function GraphVisualization({
         const nodeObjects = nodes.map(n => n.mesh).filter(Boolean) as THREE.Mesh[];
         if (nodeObjects.length > 0) {
             const dragControls = new DragControls(nodeObjects, stateRef.current.camera, stateRef.current.renderer.domElement);
+            
             dragControls.addEventListener('dragstart', (e) => {
                 if(stateRef.current.orbitControls) stateRef.current.orbitControls.enabled = false;
                 const node = nodes.find(n => n.mesh === e.object);
@@ -203,6 +205,16 @@ export function GraphVisualization({
                     if (physicsEnabled && node.physicsBody) node.physicsBody.type = CANNON.Body.STATIC;
                 }
             });
+
+            dragControls.addEventListener('click', (e) => {
+                // This event fires on a quick click, re-enable orbit controls here.
+                if(stateRef.current.orbitControls) stateRef.current.orbitControls.enabled = true;
+                const node = nodes.find(n => n.mesh === e.object);
+                if(node) {
+                    handleNodeClick(node.id);
+                }
+            });
+
             dragControls.addEventListener('drag', (e) => {
                 const node = nodes.find(n => n.mesh === e.object);
                 if (node && physicsEnabled && node.physicsBody) {
@@ -210,6 +222,7 @@ export function GraphVisualization({
                     node.physicsBody.velocity.set(0,0,0);
                 }
             });
+
             dragControls.addEventListener('dragend', (e) => {
                 if(stateRef.current.orbitControls) stateRef.current.orbitControls.enabled = true;
                 const node = nodes.find(n => n.mesh === e.object);
