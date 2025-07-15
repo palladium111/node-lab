@@ -4,10 +4,11 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { ChevronUp, ChevronDown, Plus, Trash2, Link, Play, Pause, Settings, FileJson, FileText } from 'lucide-react';
+import { ChevronUp, ChevronDown, Plus, Trash2, Link, Play, Pause, Settings, FileJson, FileText, Text } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { downloadJSON, downloadCSV } from '@/lib/export';
 import type { useGraphState } from '@/hooks/use-graph-state';
+import type { Settings } from '@/types';
 
 type TopControlsProps = ReturnType<typeof useGraphState>;
 
@@ -16,9 +17,14 @@ const allProperties = ['city', 'language', 'team'];
 export function TopControls({
     nodes, edges, clusterBy, setClusterBy, colorBy, setColorBy, propertyColorMap,
     removeNode, toggleConnectionMode, isConnecting,
-    physicsEnabled, setPhysicsEnabled, setSettingsModalOpen, setAddNodeModalOpen
+    physicsEnabled, setPhysicsEnabled, setSettingsModalOpen, setAddNodeModalOpen,
+    settings, updateSettings
 }: TopControlsProps) {
     const [isCollapsed, setIsCollapsed] = useState(false);
+
+    const handleLabelToggle = () => {
+        updateSettings({ showNodeLabels: !settings.showNodeLabels });
+    }
 
     return (
         <div className={cn("absolute top-0 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-10 transition-transform duration-300 ease-in-out", {
@@ -56,14 +62,15 @@ export function TopControls({
                     </div>
                     <div className="control-group">
                         <h4 className="mb-2 text-xs font-bold uppercase text-muted-foreground">Actions</h4>
-                        <div className="grid grid-cols-2 gap-2">
-                            <Button variant="outline" size="default" onClick={() => setAddNodeModalOpen(true)}><Plus /> Add</Button>
-                            <Button variant="outline" size="default" onClick={() => removeNode()}><Trash2 /> Remove</Button>
+                        <div className="grid grid-cols-3 gap-2">
+                            <Button variant="outline" size="default" onClick={() => setAddNodeModalOpen(true)}><Plus /></Button>
+                            <Button variant="outline" size="default" onClick={() => removeNode()}><Trash2 /></Button>
                             <Button variant={isConnecting ? "default" : "outline"} size="default" onClick={() => toggleConnectionMode()}><Link /></Button>
                             <Button variant="outline" size="default" onClick={() => setPhysicsEnabled(!physicsEnabled)} className={cn({'text-green-500 border-green-500 hover:text-green-600': physicsEnabled})}>
                                 {physicsEnabled ? <Pause /> : <Play />}
                             </Button>
                             <Button variant="outline" size="default" onClick={() => setSettingsModalOpen(true)}><Settings /></Button>
+                            <Button variant={settings.showNodeLabels ? "default" : "outline"} size="default" onClick={handleLabelToggle}><Text /></Button>
                         </div>
                     </div>
                     <div className="control-group">
