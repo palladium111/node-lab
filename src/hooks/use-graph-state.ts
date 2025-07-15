@@ -24,6 +24,75 @@ const defaultSettings: Settings = {
 
 const colorPalette = [0x1f77b4, 0xff7f0e, 0x2ca02c, 0xd62728, 0x9467bd, 0x8c564b, 0xe377c2, 0x7f7f7f, 0xbcbd22, 0x17becf];
 
+function createInitialNodes(scene: THREE.Scene, world: CANNON.World, settings: Settings): Node[] {
+    return sampleNodesData.map(n => {
+        const geometry = new THREE.SphereGeometry(1, 32, 32);
+        const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
+        const mesh = new THREE.Mesh(geometry, material);
+        const initialPos = new THREE.Vector3((Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40);
+        mesh.position.copy(initialPos);
+        
+        const shape = new CANNON.Sphere(1);
+        const physicsBody = new CANNON.Body({ mass: 1, linearDamping: settings.damping, angularDamping: settings.damping });
+        physicsBody.addShape(shape);
+        physicsBody.position.copy(initialPos as any);
+        
+        world.addBody(physicsBody);
+        scene.add(mesh);
+
+        return { id: THREE.MathUtils.generateUUID(), name: n.name, mesh, properties: n.properties, physicsBody };
+    });
+}
+
+function createEdges(nodes: Node[], settings: Settings, scene: THREE.Scene): Edge[] {
+    let newEdges: Edge[] = [];
+    if (nodes.length === 0 || !scene) return newEdges;
+
+    let connectionCounts = new Map<string, number>();
+    nodes.forEach(n => connectionCounts.set(n.id, 0));
+
+    const createEdgeInternal = (nodeA: Node, nodeB: Node) => {
+         if (!scene || !nodeA.mesh || !nodeB.mesh || nodeA === nodeB || newEdges.some(e => (e.startNode.id === nodeA.id && e.endNode.id === nodeB.id) || (e.startNode.id === nodeB.id && e.endNode.id === nodeA.id))) return;
+        const material = new THREE.LineBasicMaterial({ color: 0x9ca3af, linewidth: 1, transparent: true, opacity: 0.7 });
+        const geometry = new THREE.BufferGeometry().setFromPoints([nodeA.mesh.position, nodeB.mesh.position]);
+        const line = new THREE.Line(geometry, material);
+        scene.add(line);
+        newEdges.push({ id: THREE.MathUtils.generateUUID(), startNode: nodeA, endNode: nodeB, mesh: line });
+        connectionCounts.set(nodeA.id, (connectionCounts.get(nodeA.id) || 0) + 1);
+        connectionCounts.set(nodeB.id, (connectionCounts.get(nodeB.id) || 0) + 1);
+    }
+
+    nodes.forEach(nodeA => {
+        while ((connectionCounts.get(nodeA.id) || 0) < settings.minConnections) {
+            const potentialTargets = nodes.filter(nodeB => 
+                nodeA !== nodeB && 
+                (connectionCounts.get(nodeB.id) || 0) < settings.maxConnections &&
+                !newEdges.some(e => (e.startNode === nodeA && e.endNode === nodeB) || (e.startNode === nodeB && e.endNode === nodeA))
+            );
+            if (potentialTargets.length === 0) break;
+            const targetNode = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
+            createEdgeInternal(nodeA, targetNode);
+        }
+    });
+    
+    for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+            const nodeA = nodes[i];
+            const nodeB = nodes[j];
+            if ((connectionCounts.get(nodeA.id) || 0) >= settings.maxConnections || (connectionCounts.get(nodeB.id) || 0) >= settings.maxConnections) continue;
+
+            let probability = 0.05;
+            if (nodeA.properties.city && nodeA.properties.city === nodeB.properties.city) probability += settings.cityAffinity;
+            if (nodeA.properties.language && nodeA.properties.language === nodeB.properties.language) probability += settings.languageAffinity;
+            
+            if (Math.random() < probability) {
+               createEdgeInternal(nodeA, nodeB);
+            }
+        }
+    }
+    return newEdges;
+}
+
 export function useGraphState() {
     const { toast } = useToast();
     const [nodes, setNodes] = useState<Node[]>([]);
@@ -40,83 +109,29 @@ export function useGraphState() {
     const [scene, setScene] = useState<THREE.Scene | null>(null);
     const [world, setWorld] = useState<CANNON.World | null>(null);
 
-    const selectedNode = useMemo(() => nodes.find(n => n.id === selectedNodeId) || null, [nodes, selectedNodeId]);
-    
-    const regenerateEdges = useCallback((currentNodes: Node[], currentSettings: Settings, targetScene: THREE.Scene) => {
-        if(!targetScene) return [];
-        
-        let newEdges: Edge[] = [];
-        let connectionCounts = new Map<string, number>();
-        currentNodes.forEach(n => connectionCounts.set(n.id, 0));
-
-        const createEdgeInternal = (nodeA: Node, nodeB: Node) => {
-             if (!targetScene || !nodeA.mesh || !nodeB.mesh || nodeA === nodeB || newEdges.some(e => (e.startNode.id === nodeA.id && e.endNode.id === nodeB.id) || (e.startNode.id === nodeB.id && e.endNode.id === nodeA.id))) return;
-            const material = new THREE.LineBasicMaterial({ color: 0x9ca3af, linewidth: 1, transparent: true, opacity: 0.7 });
-            const geometry = new THREE.BufferGeometry().setFromPoints([nodeA.mesh.position, nodeB.mesh.position]);
-            const line = new THREE.Line(geometry, material);
-            targetScene.add(line);
-            newEdges.push({ id: THREE.MathUtils.generateUUID(), startNode: nodeA, endNode: nodeB, mesh: line });
-            connectionCounts.set(nodeA.id, (connectionCounts.get(nodeA.id) || 0) + 1);
-            connectionCounts.set(nodeB.id, (connectionCounts.get(nodeB.id) || 0) + 1);
-        }
-
-        currentNodes.forEach(nodeA => {
-            while ((connectionCounts.get(nodeA.id) || 0) < currentSettings.minConnections) {
-                const potentialTargets = currentNodes.filter(nodeB => 
-                    nodeA !== nodeB && 
-                    (connectionCounts.get(nodeB.id) || 0) < currentSettings.maxConnections &&
-                    !newEdges.some(e => (e.startNode === nodeA && e.endNode === nodeB) || (e.startNode === nodeB && e.endNode === nodeA))
-                );
-                if (potentialTargets.length === 0) break;
-                const targetNode = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
-                createEdgeInternal(nodeA, targetNode);
-            }
-        });
-        
-        for (let i = 0; i < currentNodes.length; i++) {
-            for (let j = i + 1; j < currentNodes.length; j++) {
-                const nodeA = currentNodes[i];
-                const nodeB = currentNodes[j];
-                if ((connectionCounts.get(nodeA.id) || 0) >= currentSettings.maxConnections || (connectionCounts.get(nodeB.id) || 0) >= currentSettings.maxConnections) continue;
-
-                let probability = 0.05;
-                if (nodeA.properties.city && nodeA.properties.city === nodeB.properties.city) probability += currentSettings.cityAffinity;
-                if (nodeA.properties.language && nodeA.properties.language === nodeB.properties.language) probability += currentSettings.languageAffinity;
-                
-                if (Math.random() < probability) {
-                   createEdgeInternal(nodeA, nodeB);
-                }
-            }
-        }
-        return newEdges;
-    }, []);
-
     // Initial setup
     useEffect(() => {
         if (!scene || !world || nodes.length > 0) return;
 
-        const initialNodes = sampleNodesData.map(n => {
-            const geometry = new THREE.SphereGeometry(1, 32, 32);
-            const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
-            const mesh = new THREE.Mesh(geometry, material);
-            const initialPos = new THREE.Vector3((Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40);
-            mesh.position.copy(initialPos);
-            
-            const shape = new CANNON.Sphere(1);
-            const physicsBody = new CANNON.Body({ mass: 1, linearDamping: settings.damping, angularDamping: settings.damping });
-            physicsBody.addShape(shape);
-            physicsBody.position.copy(initialPos as any);
-            
-            world.addBody(physicsBody);
-            scene.add(mesh);
-
-            return { id: THREE.MathUtils.generateUUID(), name: n.name, mesh, properties: n.properties, physicsBody };
-        });
-
+        const initialNodes = createInitialNodes(scene, world, settings);
         setNodes(initialNodes);
-        const initialEdges = regenerateEdges(initialNodes, settings, scene);
+
+        const initialEdges = createEdges(initialNodes, settings, scene);
         setEdges(initialEdges);
-    }, [scene, world, settings, regenerateEdges, nodes.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [scene, world]);
+
+    const regenerateEdges = useCallback(() => {
+        if (!scene) return;
+        // Clear existing edges from scene
+        edges.forEach(edge => scene.remove(edge.mesh));
+        
+        // Generate new edges
+        const newEdges = createEdges(nodes, settings, scene);
+        setEdges(newEdges);
+    }, [scene, nodes, edges, settings]);
+    
+    const selectedNode = useMemo(() => nodes.find(n => n.id === selectedNodeId) || null, [nodes, selectedNodeId]);
 
     const addNode = useCallback(() => {
         if (!scene || !world) return;
@@ -146,6 +161,8 @@ export function useGraphState() {
         if (!selectedNodeId || !scene || !world) return;
         setEdges(prev => prev.filter(e => {
             if (e.startNode.id === selectedNodeId || e.endNode.id === selectedNodeId) {
+                e.mesh.geometry.dispose();
+                (e.mesh.material as THREE.Material).dispose();
                 scene.remove(e.mesh);
                 return false;
             }
@@ -153,6 +170,8 @@ export function useGraphState() {
         }));
         setNodes(prev => prev.filter(n => {
             if (n.id === selectedNodeId) {
+                n.mesh.geometry.dispose();
+                (n.mesh.material as THREE.Material).dispose();
                 scene.remove(n.mesh);
                 world.removeBody(n.physicsBody);
                 return false;
@@ -276,13 +295,6 @@ export function useGraphState() {
         return centers;
     }, [nodes, clusterBy, settings.clusterLayout, settings.clusterRadius]);
 
-    const doRegenerateEdges = useCallback(() => {
-        if (!scene) return;
-        edges.forEach(edge => scene?.remove(edge.mesh));
-        const newEdges = regenerateEdges(nodes, settings, scene);
-        setEdges(newEdges);
-    }, [nodes, edges, scene, regenerateEdges, settings]);
-    
     return {
         nodes, setNodes,
         edges, setEdges,
@@ -302,6 +314,6 @@ export function useGraphState() {
         handleNodeClick,
         toggleConnectionMode,
         updateNodeProperty,
-        regenerateEdges: doRegenerateEdges
+        regenerateEdges,
     };
 }
