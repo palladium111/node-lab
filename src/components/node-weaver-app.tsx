@@ -24,7 +24,22 @@ export function NodeWeaverApp() {
 
             <DataTable {...graphState} />
 
-            <SettingsModal {...graphState} />
+            <SettingsModal
+                type="physics"
+                isOpen={graphState.isPhysicsSettingsModalOpen}
+                onOpenChange={graphState.setPhysicsSettingsModalOpen}
+                settings={graphState.settings}
+                updateSettings={graphState.updateSettings}
+            />
+
+            <SettingsModal
+                type="generation"
+                isOpen={graphState.isGenerationSettingsModalOpen}
+                onOpenChange={graphState.setGenerationSettingsModalOpen}
+                settings={graphState.settings}
+                updateSettings={graphState.updateSettings}
+                regenerateEdges={graphState.regenerateEdges}
+            />
 
             <AddNodeModal
                 isOpen={graphState.isAddNodeModalOpen}

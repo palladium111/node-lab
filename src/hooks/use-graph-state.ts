@@ -177,8 +177,9 @@ export function useGraphState() {
     const [physicsEnabled, setPhysicsEnabled] = useState(true);
     const [clusterBy, setClusterBy] = useState('city');
     const [colorBy, setColorBy] = useState('language');
-    const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
     const [isAddNodeModalOpen, setAddNodeModalOpen] = useState(false);
+    const [isPhysicsSettingsModalOpen, setPhysicsSettingsModalOpen] = useState(false);
+    const [isGenerationSettingsModalOpen, setGenerationSettingsModalOpen] = useState(false);
     
     const [scene, setScene] = useState<THREE.Scene | null>(null);
     const [world, setWorld] = useState<CANNON.World | null>(null);
@@ -429,8 +430,9 @@ export function useGraphState() {
         propertyColorMap,
         scene, setScene,
         world, setWorld,
-        isSettingsModalOpen, setSettingsModalOpen,
         isAddNodeModalOpen, setAddNodeModalOpen,
+        isPhysicsSettingsModalOpen, setPhysicsSettingsModalOpen,
+        isGenerationSettingsModalOpen, setGenerationSettingsModalOpen,
         clusterCenters,
         addNode, removeNode, createEdge,
         handleNodeClick,
