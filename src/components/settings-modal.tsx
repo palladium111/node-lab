@@ -25,6 +25,11 @@ export function SettingsModal({ settings, updateSettings, isSettingsModalOpen, s
         updateSettings(newSettings);
     };
 
+    const handleRegenerate = () => {
+        regenerateEdges();
+        setSettingsModalOpen(false);
+    }
+
     return (
         <Dialog open={isSettingsModalOpen} onOpenChange={setSettingsModalOpen}>
             <DialogContent className="sm:max-w-[450px]">
@@ -52,7 +57,7 @@ export function SettingsModal({ settings, updateSettings, isSettingsModalOpen, s
                     <SliderControl label="Max Connections / Node" id="max-conn" value={settings.maxConnections} min={0} max={10} step={1} onValueChange={(v:any) => handleSettingsChange({ maxConnections: v })} displayTransform={(v:any) => v} />
                     <SliderControl label="City Connection Affinity" id="city-affinity" value={settings.cityAffinity * 100} min={0} max={100} step={1} onValueChange={(v:any) => handleSettingsChange({ cityAffinity: v / 100 })} displayTransform={(v:any) => `${v.toFixed(0)}%`} />
                     <SliderControl label="Language Connection Affinity" id="lang-affinity" value={settings.languageAffinity * 100} min={0} max={100} step={1} onValueChange={(v:any) => handleSettingsChange({ languageAffinity: v / 100 })} displayTransform={(v:any) => `${v.toFixed(0)}%`} />
-                     <Button onClick={regenerateEdges}>Regenerate Edges</Button>
+                     <Button onClick={handleRegenerate}>Regenerate Edges</Button>
 
                     <h4 className="text-sm font-medium text-muted-foreground border-t pt-4">Physics</h4>
                     <SliderControl label="Cluster Attraction" id="attraction" value={settings.clusterAttraction} min={0} max={3} step={0.1} onValueChange={(v:any) => handleSettingsChange({ clusterAttraction: v })} displayTransform={(v:any) => v.toFixed(2)} />

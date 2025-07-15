@@ -59,7 +59,7 @@ export function useGraphState() {
         return node;
     }, []);
     
-    const regenerateEdges = useCallback(() => {
+    const regenerateEdges = useCallback((currentNodes: Node[]) => {
         if(!scene) return;
         setEdges(prevEdges => {
             prevEdges.forEach(edge => scene.remove(edge.mesh));
@@ -68,7 +68,7 @@ export function useGraphState() {
 
         let newEdges: Edge[] = [];
         let connectionCounts = new Map<string, number>();
-        nodes.forEach(n => connectionCounts.set(n.id, 0));
+        currentNodes.forEach(n => connectionCounts.set(n.id, 0));
 
         const createEdgeInternal = (nodeA: Node, nodeB: Node) => {
              if (!scene || !nodeA || !nodeB || nodeA === nodeB || newEdges.some(e => (e.startNode.id === nodeA.id && e.endNode.id === nodeB.id) || (e.startNode.id === nodeB.id && e.endNode.id === nodeA.id))) return;
@@ -81,9 +81,9 @@ export function useGraphState() {
             connectionCounts.set(nodeB.id, (connectionCounts.get(nodeB.id) || 0) + 1);
         }
 
-        nodes.forEach(nodeA => {
+        currentNodes.forEach(nodeA => {
             while ((connectionCounts.get(nodeA.id) || 0) < settings.minConnections) {
-                const potentialTargets = nodes.filter(nodeB => 
+                const potentialTargets = currentNodes.filter(nodeB => 
                     nodeA !== nodeB && 
                     (connectionCounts.get(nodeB.id) || 0) < settings.maxConnections &&
                     !newEdges.some(e => (e.startNode === nodeA && e.endNode === nodeB) || (e.startNode === nodeB && e.endNode === nodeA))
@@ -94,10 +94,10 @@ export function useGraphState() {
             }
         });
         
-        for (let i = 0; i < nodes.length; i++) {
-            for (let j = i + 1; j < nodes.length; j++) {
-                const nodeA = nodes[i];
-                const nodeB = nodes[j];
+        for (let i = 0; i < currentNodes.length; i++) {
+            for (let j = i + 1; j < currentNodes.length; j++) {
+                const nodeA = currentNodes[i];
+                const nodeB = currentNodes[j];
                 if ((connectionCounts.get(nodeA.id) || 0) >= settings.maxConnections || (connectionCounts.get(nodeB.id) || 0) >= settings.maxConnections) continue;
 
                 let probability = 0.05;
@@ -110,19 +110,15 @@ export function useGraphState() {
             }
         }
         setEdges(newEdges);
-    }, [nodes, settings, scene]);
+    }, [settings, scene]);
 
     useEffect(() => {
         if (isInitialized || !scene || !world) return;
         const initialNodes = sampleNodesData.map(n => addNodeInternal(scene, world, n.name, n.properties, settings.damping));
         setNodes(initialNodes);
+        regenerateEdges(initialNodes);
         setIsInitialized(true);
-    }, [scene, world, isInitialized, addNodeInternal, settings.damping]);
-    
-    useEffect(() => {
-        if (!isInitialized || nodes.length === 0) return;
-        regenerateEdges();
-    }, [isInitialized, nodes, regenerateEdges]);
+    }, [scene, world, isInitialized, addNodeInternal, settings.damping, regenerateEdges]);
 
 
     const removeNode = useCallback(() => {
@@ -197,23 +193,30 @@ export function useGraphState() {
     }, [toast]);
 
     const updateNodeProperty = useCallback((nodeId: string, prop: string, value: any) => {
-        setNodes(nodes => nodes.map(n => {
-            if (n.id === nodeId) {
-                if (prop === 'name') return { ...n, name: value };
-                return { ...n, properties: { ...n.properties, [prop]: value } };
-            }
-            return n;
-        }));
-    }, []);
+        setNodes(nodes => {
+            const newNodes = nodes.map(n => {
+                if (n.id === nodeId) {
+                    if (prop === 'name') return { ...n, name: value };
+                    return { ...n, properties: { ...n.properties, [prop]: value } };
+                }
+                return n;
+            });
+            regenerateEdges(newNodes);
+            return newNodes;
+        });
+    }, [regenerateEdges]);
 
     const updateSettings = useCallback((newSettings: Partial<Settings>) => {
-        setSettings(s => ({ ...s, ...newSettings }));
-        if(newSettings.damping) {
-            nodes.forEach(n => {
-                n.physicsBody.linearDamping = newSettings.damping!;
-                n.physicsBody.angularDamping = newSettings.damping!;
-            });
-        }
+        setSettings(s => {
+            const updatedSettings = { ...s, ...newSettings };
+            if(newSettings.damping) {
+                nodes.forEach(n => {
+                    n.physicsBody.linearDamping = newSettings.damping!;
+                    n.physicsBody.angularDamping = newSettings.damping!;
+                });
+            }
+            return updatedSettings;
+        });
     }, [nodes]);
     
     useEffect(() => {
@@ -261,6 +264,10 @@ export function useGraphState() {
         return centers;
     }, [nodes, clusterBy, settings.clusterLayout, settings.clusterRadius]);
 
+    const doRegenerateEdges = useCallback(() => {
+        regenerateEdges(nodes);
+    }, [nodes, regenerateEdges]);
+    
     return {
         nodes, setNodes,
         edges, setEdges,
@@ -280,6 +287,6 @@ export function useGraphState() {
         handleNodeClick,
         toggleConnectionMode,
         updateNodeProperty,
-        regenerateEdges
+        regenerateEdges: doRegenerateEdges
     };
 }
