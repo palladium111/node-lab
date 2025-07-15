@@ -17,7 +17,7 @@ const bidirectionalEdgeColor = 0x3b82f6;
 
 export function GraphVisualization({
     nodes, edges, settings, selectedNode, physicsEnabled, clusterBy, colorBy, propertyColorMap, clusterCenters,
-    setScene, setWorld, handleNodeClick,
+    scene, setScene, world, setWorld, handleNodeClick,
 }: GraphState) {
     const containerRef = useRef<HTMLDivElement>(null);
     const stateRef = useRef<{
@@ -32,9 +32,9 @@ export function GraphVisualization({
         if (!containerRef.current || stateRef.current.renderer) return;
 
         const container = containerRef.current;
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1F2937);
-        setScene(scene);
+        const localScene = new THREE.Scene();
+        localScene.background = new THREE.Color(0x1F2937);
+        setScene(localScene);
 
         const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
         camera.position.z = 50;
@@ -46,17 +46,17 @@ export function GraphVisualization({
         container.appendChild(renderer.domElement);
         stateRef.current.renderer = renderer;
 
-        const world = new CANNON.World();
-        world.gravity.set(0, 0, 0);
-        world.broadphase = new CANNON.NaiveBroadphase();
-        world.solver.iterations = 10;
-        setWorld(world);
+        const localWorld = new CANNON.World();
+        localWorld.gravity.set(0, 0, 0);
+        localWorld.broadphase = new CANNON.NaiveBroadphase();
+        localWorld.solver.iterations = 10;
+        setWorld(localWorld);
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        scene.add(ambientLight);
+        localScene.add(ambientLight);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
         directionalLight.position.set(5, 10, 7.5);
-        scene.add(directionalLight);
+        localScene.add(directionalLight);
 
         const orbitControls = new OrbitControls(camera, renderer.domElement);
         orbitControls.enableDamping = true;
@@ -93,7 +93,7 @@ export function GraphVisualization({
             requestAnimationFrame(animate);
             orbitControls.update();
 
-            if (physicsEnabled && world) {
+            if (physicsEnabled && localWorld) {
                 // Physics calculations...
                 edges.forEach(edge => {
                     const { startNode, endNode } = edge;
@@ -127,7 +127,7 @@ export function GraphVisualization({
                     });
                 });
                 
-                world.step(timeStep);
+                localWorld.step(timeStep);
                 nodes.forEach(n => {
                     n.mesh.position.copy(n.physicsBody.position as any);
                     n.mesh.quaternion.copy(n.physicsBody.quaternion as any);
@@ -142,7 +142,7 @@ export function GraphVisualization({
             });
             
             stateRef.current.clusterCenterMeshes.forEach(mesh => mesh.lookAt(camera.position));
-            renderer.render(scene, camera);
+            renderer.render(localScene, camera);
         };
         animate();
 
@@ -195,7 +195,7 @@ export function GraphVisualization({
             // Color
             const value = node.properties[colorBy];
             const color = colorBy === 'none' ? 0xcccccc : (propertyColorMap[colorBy]?.[value] || 0x4b5563);
-            node.mesh.material.color.set(color);
+            (node.mesh.material as THREE.MeshPhongMaterial).color.set(color);
 
             // Scale
             const scale = selectedNode?.id === node.id ? 1.5 : 1;
@@ -222,15 +222,14 @@ export function GraphVisualization({
                     opacity = 1;
                  }
             }
-            edge.mesh.material.color.set(color);
-            edge.mesh.material.linewidth = width;
-            edge.mesh.material.opacity = opacity;
+            (edge.mesh.material as THREE.LineBasicMaterial).color.set(color);
+            (edge.mesh.material as THREE.LineBasicMaterial).linewidth = width;
+            (edge.mesh.material as THREE.LineBasicMaterial).opacity = opacity;
         });
     }, [edges, selectedNode]);
 
     // Cluster centers visualization
     useEffect(() => {
-        const scene = stateRef.current.renderer?.domElement.parentElement?.parentElement?.__three.scene;
         if (!scene || !stateRef.current.camera) return;
 
         stateRef.current.clusterCenterMeshes.forEach(mesh => scene.remove(mesh));
@@ -249,7 +248,7 @@ export function GraphVisualization({
                 stateRef.current.clusterCenterMeshes.push(centerMesh);
             });
         }
-    }, [clusterCenters, clusterBy, colorBy, propertyColorMap]);
+    }, [clusterCenters, clusterBy, colorBy, propertyColorMap, scene]);
 
     return <div ref={containerRef} className="w-full h-full" />;
 }
