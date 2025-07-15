@@ -120,9 +120,9 @@ export function useGraphState() {
     }, [scene, world, isInitialized, addNodeInternal, settings.damping]);
     
     useEffect(() => {
-        if (!isInitialized) return;
+        if (!isInitialized || nodes.length === 0) return;
         regenerateEdges();
-    }, [isInitialized, regenerateEdges]);
+    }, [isInitialized, nodes, regenerateEdges]);
 
 
     const removeNode = useCallback(() => {
