@@ -111,6 +111,7 @@ export function useGraphState() {
 
     // Initial setup
     useEffect(() => {
+        if (scene && world) return; // Only run once
         const localScene = new THREE.Scene();
         localScene.background = new THREE.Color(0x1F2937);
         const localWorld = new CANNON.World();
@@ -126,7 +127,7 @@ export function useGraphState() {
 
         const initialEdges = createEdges(initialNodes, defaultSettings, localScene);
         setEdges(initialEdges);
-    }, []);
+    }, [scene, world]);
 
     const regenerateEdges = useCallback(() => {
         if (!scene) return;
@@ -201,8 +202,14 @@ export function useGraphState() {
         setEdges(prev => [...prev, { id: THREE.MathUtils.generateUUID(), startNode, endNode, mesh: line }]);
     }, [scene, nodes, edges]);
 
-    const handleNodeClick = useCallback((nodeId: string) => {
+    const handleNodeClick = useCallback((nodeId: string | null) => {
         if (isConnecting) {
+            if (!nodeId) { // Clicked on empty space, cancel connection
+                 setIsConnecting(false);
+                 setConnectionStartNodeId(null);
+                 toast({ title: "Connection mode cancelled" });
+                 return;
+            }
             if (!connectionStartNodeId) {
                 setConnectionStartNodeId(nodeId);
                 toast({ title: "Select a target node to connect." });
