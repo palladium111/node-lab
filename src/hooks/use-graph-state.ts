@@ -102,8 +102,8 @@ export function useGraphState() {
     const [isConnecting, setIsConnecting] = useState(false);
     const [connectionStartNodeId, setConnectionStartNodeId] = useState<string | null>(null);
     const [physicsEnabled, setPhysicsEnabled] = useState(true);
-    const [clusterBy, _setClusterBy] = useState('team');
-    const [colorBy, _setColorBy] = useState('city');
+    const [clusterBy, setClusterBy] = useState('team');
+    const [colorBy, setColorBy] = useState('city');
     const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
     
     const [scene, setScene] = useState<THREE.Scene | null>(null);
@@ -111,15 +111,22 @@ export function useGraphState() {
 
     // Initial setup
     useEffect(() => {
-        if (!scene || !world || nodes.length > 0) return;
+        const localScene = new THREE.Scene();
+        localScene.background = new THREE.Color(0x1F2937);
+        const localWorld = new CANNON.World();
+        localWorld.gravity.set(0, 0, 0);
+        localWorld.broadphase = new CANNON.NaiveBroadphase();
+        localWorld.solver.iterations = 10;
+        
+        setScene(localScene);
+        setWorld(localWorld);
 
-        const initialNodes = createInitialNodes(scene, world, defaultSettings);
+        const initialNodes = createInitialNodes(localScene, localWorld, defaultSettings);
         setNodes(initialNodes);
 
-        const initialEdges = createEdges(initialNodes, defaultSettings, scene);
+        const initialEdges = createEdges(initialNodes, defaultSettings, localScene);
         setEdges(initialEdges);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [scene, world]);
+    }, []);
 
     const regenerateEdges = useCallback(() => {
         if (!scene) return;
@@ -173,7 +180,7 @@ export function useGraphState() {
                 n.mesh.geometry.dispose();
                 (n.mesh.material as THREE.Material).dispose();
                 scene.remove(n.mesh);
-                world.removeBody(n.physicsBody);
+                if (n.physicsBody) world.removeBody(n.physicsBody);
                 return false;
             }
             return true;
@@ -185,7 +192,7 @@ export function useGraphState() {
         if (!scene) return;
         const startNode = nodes.find(n => n.id === startNodeId);
         const endNode = nodes.find(n => n.id === endNodeId);
-        if (!startNode || !endNode || startNode === endNode || edges.some(e => e.startNode === startNode && e.endNode === endNode)) return;
+        if (!startNode || !endNode || startNode === endNode || !startNode.mesh || !endNode.mesh || edges.some(e => e.startNode === startNode && e.endNode === endNode)) return;
         
         const material = new THREE.LineBasicMaterial({ color: 0x9ca3af, linewidth: 1, transparent: true, opacity: 0.7 });
         const geometry = new THREE.BufferGeometry().setFromPoints([startNode.mesh.position, endNode.mesh.position]);
@@ -272,7 +279,7 @@ export function useGraphState() {
         const centers: { [key: string]: CANNON.Vec3 } = {};
         if (clusterBy === 'none') return centers;
 
-        const uniqueValues = Array.from(new Set(nodes.map(n => n.properties[clusterBy]).filter(v => v !== undefined)));
+        const uniqueValues = Array.from(new Set(nodes.map(n => n.properties[clusterBy]).filter(Boolean)));
         const n = uniqueValues.length;
 
         uniqueValues.forEach((value, i) => {
@@ -294,15 +301,6 @@ export function useGraphState() {
         });
         return centers;
     }, [nodes, clusterBy, settings.clusterLayout, settings.clusterRadius]);
-
-    const setClusterBy = useCallback((value: string) => {
-        _setClusterBy(value);
-    }, []);
-
-    const setColorBy = useCallback((value: string) => {
-        _setColorBy(value);
-    }, []);
-
 
     return {
         nodes, setNodes,

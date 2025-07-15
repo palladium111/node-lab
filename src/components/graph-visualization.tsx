@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DragControls } from 'three/examples/jsm/controls/DragControls.js';
-import type { Node, Edge, Settings } from '@/types';
+import type { Node } from '@/types';
 import type { useGraphState } from '@/hooks/use-graph-state';
 
 type GraphState = ReturnType<typeof useGraphState>;
@@ -17,7 +17,7 @@ const bidirectionalEdgeColor = 0x3b82f6;
 
 export function GraphVisualization({
     nodes, edges, settings, selectedNode, physicsEnabled, clusterBy, colorBy, propertyColorMap, clusterCenters,
-    scene, setScene, world, setWorld, handleNodeClick,
+    scene, world, handleNodeClick,
 }: GraphState) {
     const containerRef = useRef<HTMLDivElement>(null);
     const stateRef = useRef<{
@@ -29,15 +29,12 @@ export function GraphVisualization({
         animationFrameId?: number,
     }>({ clusterCenterMeshes: [] });
 
-    // One-time setup for scene, camera, renderer, world
+    // One-time setup for scene, camera, renderer
     useEffect(() => {
-        if (!containerRef.current || stateRef.current.renderer) return;
+        if (!containerRef.current || stateRef.current.renderer || !scene || !world) return;
 
         const container = containerRef.current;
-        const localScene = new THREE.Scene();
-        localScene.background = new THREE.Color(0x1F2937);
-        setScene(localScene);
-
+        
         const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
         camera.position.z = 50;
         stateRef.current.camera = camera;
@@ -48,17 +45,11 @@ export function GraphVisualization({
         container.appendChild(renderer.domElement);
         stateRef.current.renderer = renderer;
 
-        const localWorld = new CANNON.World();
-        localWorld.gravity.set(0, 0, 0);
-        localWorld.broadphase = new CANNON.NaiveBroadphase();
-        localWorld.solver.iterations = 10;
-        setWorld(localWorld);
-
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        localScene.add(ambientLight);
+        scene.add(ambientLight);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
         directionalLight.position.set(5, 10, 7.5);
-        localScene.add(directionalLight);
+        scene.add(directionalLight);
 
         const orbitControls = new OrbitControls(camera, renderer.domElement);
         orbitControls.enableDamping = true;
@@ -85,7 +76,7 @@ export function GraphVisualization({
             const nodeMeshes = nodes.map(n => n.mesh).filter(Boolean);
             if (nodeMeshes.length === 0) return;
 
-            const intersects = raycaster.intersectObjects(nodeMeshes);
+            const intersects = raycaster.intersectObjects(nodeMeshes as THREE.Mesh[]);
             if (intersects.length > 0) {
                 const intersectedNode = nodes.find(n => n.mesh === intersects[0].object);
                 if (intersectedNode) {
@@ -99,11 +90,15 @@ export function GraphVisualization({
             if(stateRef.current.animationFrameId) cancelAnimationFrame(stateRef.current.animationFrameId);
             window.removeEventListener('resize', handleResize);
             if(container) container.removeEventListener('click', handleCanvasClick);
-            if(renderer && container) container.removeChild(renderer.domElement);
-            // Dispose Three.js objects
+            if(renderer?.domElement && container) {
+                container.removeChild(renderer.domElement);
+            }
+             // Dispose Three.js objects
+            renderer?.dispose();
             stateRef.current.renderer = undefined;
         };
-    }, [setScene, setWorld, nodes, handleNodeClick]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [scene, world]);
 
     // Animation loop
     useEffect(() => {
@@ -132,7 +127,7 @@ export function GraphVisualization({
                 });
 
                 nodes.forEach(nodeA => {
-                    if (clusterBy !== 'none' && nodeA.properties[clusterBy] && clusterCenters[nodeA.properties[clusterBy]]) {
+                    if (nodeA.physicsBody && clusterBy !== 'none' && nodeA.properties[clusterBy] && clusterCenters[nodeA.properties[clusterBy]]) {
                          const center = clusterCenters[nodeA.properties[clusterBy]];
                          const force = center.vsub(nodeA.physicsBody.position);
                          force.scale(settings.clusterAttraction, force);
@@ -186,12 +181,12 @@ export function GraphVisualization({
 
     // Drag controls
     useEffect(() => {
-        if (!stateRef.current.renderer || !stateRef.current.camera || !nodes.length) return;
+        if (!stateRef.current.renderer || !stateRef.current.camera || !nodes.length || !scene) return;
         
         if (stateRef.current.dragControls) {
             stateRef.current.dragControls.dispose();
         }
-        const nodeObjects = nodes.map(n => n.mesh);
+        const nodeObjects = nodes.map(n => n.mesh).filter(Boolean) as THREE.Mesh[];
         if (nodeObjects.length > 0) {
             const dragControls = new DragControls(nodeObjects, stateRef.current.camera, stateRef.current.renderer.domElement);
             dragControls.addEventListener('dragstart', (e) => {
@@ -224,7 +219,7 @@ export function GraphVisualization({
             stateRef.current.dragControls?.dispose();
         }
 
-    }, [nodes, physicsEnabled, handleNodeClick]);
+    }, [nodes, scene, physicsEnabled, handleNodeClick]);
     
     // Node style updates
     useEffect(() => {
@@ -271,6 +266,7 @@ export function GraphVisualization({
     useEffect(() => {
         if (!scene || !stateRef.current.camera) return;
 
+        // Clear previous meshes
         stateRef.current.clusterCenterMeshes.forEach(mesh => scene.remove(mesh));
         stateRef.current.clusterCenterMeshes = [];
         
