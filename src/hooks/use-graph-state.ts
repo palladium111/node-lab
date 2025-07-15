@@ -46,42 +46,59 @@ function createInitialNodes(scene: THREE.Scene, world: CANNON.World, settings: S
 
 function createEdges(nodes: Node[], settings: Settings, scene: THREE.Scene): Edge[] {
     let newEdges: Edge[] = [];
-    if (nodes.length === 0 || !scene) return newEdges;
+    if (nodes.length < 2 || !scene) return newEdges;
 
-    let connectionCounts = new Map<string, number>();
-    nodes.forEach(n => connectionCounts.set(n.id, 0));
+    const connectionCounts = new Map<string, number>(nodes.map(n => [n.id, 0]));
 
     const createEdgeInternal = (nodeA: Node, nodeB: Node) => {
-         if (!scene || !nodeA.mesh || !nodeB.mesh || nodeA === nodeB || newEdges.some(e => (e.startNode.id === nodeA.id && e.endNode.id === nodeB.id) || (e.startNode.id === nodeB.id && e.endNode.id === nodeA.id))) return;
+        if (!scene || !nodeA.mesh || !nodeB.mesh || nodeA === nodeB || newEdges.some(e => 
+            (e.startNode.id === nodeA.id && e.endNode.id === nodeB.id) || 
+            (e.startNode.id === nodeB.id && e.endNode.id === nodeA.id)
+        )) return false;
+
         const material = new THREE.LineBasicMaterial({ color: 0x9ca3af, linewidth: 1, transparent: true, opacity: 0.7 });
         const geometry = new THREE.BufferGeometry().setFromPoints([nodeA.mesh.position, nodeB.mesh.position]);
         const line = new THREE.Line(geometry, material);
         scene.add(line);
         newEdges.push({ id: THREE.MathUtils.generateUUID(), startNode: nodeA, endNode: nodeB, mesh: line });
+        
         connectionCounts.set(nodeA.id, (connectionCounts.get(nodeA.id) || 0) + 1);
         connectionCounts.set(nodeB.id, (connectionCounts.get(nodeB.id) || 0) + 1);
+        return true;
     }
 
-    nodes.forEach(nodeA => {
-        while ((connectionCounts.get(nodeA.id) || 0) < settings.minConnections) {
-            const potentialTargets = nodes.filter(nodeB => 
-                nodeA !== nodeB && 
-                (connectionCounts.get(nodeB.id) || 0) < settings.maxConnections &&
-                !newEdges.some(e => (e.startNode === nodeA && e.endNode === nodeB) || (e.startNode === nodeB && e.endNode === nodeA))
-            );
-            if (potentialTargets.length === 0) break;
-            const targetNode = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
-            createEdgeInternal(nodeA, targetNode);
-        }
-    });
-    
+    // --- Phase 1: Enforce Minimum Connections ---
+    let underConnectedNodes = nodes.filter(n => (connectionCounts.get(n.id) || 0) < settings.minConnections);
+    let attempts = 0;
+    const maxAttempts = nodes.length * nodes.length;
+
+    while(underConnectedNodes.length > 0 && attempts < maxAttempts) {
+        underConnectedNodes.forEach(nodeA => {
+            if((connectionCounts.get(nodeA.id) || 0) < settings.minConnections) {
+                const potentialTargets = nodes.filter(nodeB => 
+                    nodeA.id !== nodeB.id && 
+                    (connectionCounts.get(nodeB.id) || 0) < settings.maxConnections
+                );
+
+                if (potentialTargets.length > 0) {
+                    const targetNode = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
+                    createEdgeInternal(nodeA, targetNode);
+                }
+            }
+        });
+        underConnectedNodes = nodes.filter(n => (connectionCounts.get(n.id) || 0) < settings.minConnections);
+        attempts++;
+    }
+
+    // --- Phase 2: Add Affinity-Based Connections ---
     for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
             const nodeA = nodes[i];
             const nodeB = nodes[j];
-            if ((connectionCounts.get(nodeA.id) || 0) >= settings.maxConnections || (connectionCounts.get(nodeB.id) || 0) >= settings.maxConnections) continue;
+            if ((connectionCounts.get(nodeA.id) || 0) >= settings.maxConnections || 
+                (connectionCounts.get(nodeB.id) || 0) >= settings.maxConnections) continue;
 
-            let probability = 0.05;
+            let probability = 0.05; // Base probability
             if (nodeA.properties.city && nodeA.properties.city === nodeB.properties.city) probability += settings.cityAffinity;
             if (nodeA.properties.language && nodeA.properties.language === nodeB.properties.language) probability += settings.languageAffinity;
             
@@ -108,12 +125,7 @@ export function useGraphState() {
     
     const [scene, setScene] = useState<THREE.Scene | null>(null);
     const [world, setWorld] = useState<CANNON.World | null>(null);
-    const wasConnectingRef = useRef(false);
-
-    useEffect(() => {
-        wasConnectingRef.current = isConnecting;
-    }, [isConnecting]);
-
+    
     // Initial setup
     useEffect(() => {
         if (scene && world) return; // Only run once
@@ -212,7 +224,6 @@ export function useGraphState() {
             if (!nodeId) { // Clicked on empty space, cancel connection
                  setIsConnecting(false);
                  setConnectionStartNodeId(null);
-                 toast({ title: "Connection mode cancelled" });
                  return;
             }
             if (!connectionStartNodeId) {
