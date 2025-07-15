@@ -52,10 +52,10 @@ export function DataTable({ nodes, edges, selectedNode, setSelectedNodeId, updat
                                         }
                                     }}
                                 >
-                                    <TableCell className="py-1 px-4"><Input className="bg-transparent border-0" value={node.name} onChange={e => handlePropertyChange(node.id, 'name', e.target.value)} /></TableCell>
-                                    <TableCell className="py-1 px-4"><Input className="bg-transparent border-0" value={node.properties.city || ''} onChange={e => handlePropertyChange(node.id, 'city', e.target.value)} /></TableCell>
-                                    <TableCell className="py-1 px-4"><Input className="bg-transparent border-0" value={node.properties.language || ''} onChange={e => handlePropertyChange(node.id, 'language', e.target.value)} /></TableCell>
-                                    <TableCell className="py-1 px-4"><Input className="bg-transparent border-0" value={node.properties.team || ''} onChange={e => handlePropertyChange(node.id, 'team', e.target.value)} /></TableCell>
+                                    <TableCell className="py-1 px-4"><Input className="bg-transparent border-0 pl-0" value={node.name} onChange={e => handlePropertyChange(node.id, 'name', e.target.value)} /></TableCell>
+                                    <TableCell className="py-1 px-4"><Input className="bg-transparent border-0 pl-0" value={node.properties.city || ''} onChange={e => handlePropertyChange(node.id, 'city', e.target.value)} /></TableCell>
+                                    <TableCell className="py-1 px-4"><Input className="bg-transparent border-0 pl-0" value={node.properties.language || ''} onChange={e => handlePropertyChange(node.id, 'language', e.target.value)} /></TableCell>
+                                    <TableCell className="py-1 px-4"><Input className="bg-transparent border-0 pl-0" value={node.properties.team || ''} onChange={e => handlePropertyChange(node.id, 'team', e.target.value)} /></TableCell>
                                     <TableCell className="py-1 px-4 text-muted-foreground">{connectionNames || 'None'}</TableCell>
                                 </TableRow>
                              )
