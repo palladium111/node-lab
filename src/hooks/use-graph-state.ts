@@ -68,13 +68,14 @@ function createEdges(nodes: Node[], settings: Settings, scene: THREE.Scene): Edg
     }
 
     // --- Phase 1: Enforce Minimum Connections ---
-    let underConnectedNodes = nodes.filter(n => (connectionCounts.get(n.id) || 0) < settings.minConnections);
     let attempts = 0;
-    const maxAttempts = nodes.length * nodes.length;
+    const maxAttempts = nodes.length * settings.minConnections * 2; // A reasonable upper bound
 
-    while(underConnectedNodes.length > 0 && attempts < maxAttempts) {
-        underConnectedNodes.forEach(nodeA => {
-            if((connectionCounts.get(nodeA.id) || 0) < settings.minConnections) {
+    while (attempts < maxAttempts) {
+        let allNodesMeetMin = true;
+        for (const nodeA of nodes) {
+            if ((connectionCounts.get(nodeA.id) || 0) < settings.minConnections) {
+                allNodesMeetMin = false;
                 const potentialTargets = nodes.filter(nodeB => 
                     nodeA.id !== nodeB.id && 
                     (connectionCounts.get(nodeB.id) || 0) < settings.maxConnections
@@ -85,8 +86,8 @@ function createEdges(nodes: Node[], settings: Settings, scene: THREE.Scene): Edg
                     createEdgeInternal(nodeA, targetNode);
                 }
             }
-        });
-        underConnectedNodes = nodes.filter(n => (connectionCounts.get(n.id) || 0) < settings.minConnections);
+        }
+        if (allNodesMeetMin) break;
         attempts++;
     }
 
@@ -119,8 +120,8 @@ export function useGraphState() {
     const [isConnecting, setIsConnecting] = useState(false);
     const [connectionStartNodeId, setConnectionStartNodeId] = useState<string | null>(null);
     const [physicsEnabled, setPhysicsEnabled] = useState(true);
-    const [clusterBy, setClusterBy] = useState('team');
-    const [colorBy, setColorBy] = useState('city');
+    const [clusterBy, setClusterBy] = useState('city');
+    const [colorBy, setColorBy] = useState('language');
     const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
     
     const [scene, setScene] = useState<THREE.Scene | null>(null);
@@ -259,7 +260,7 @@ export function useGraphState() {
             return nodes.map(n => {
                 if (n.id === nodeId) {
                     if (prop === 'name') return { ...n, name: value };
-                    return { ...n, properties: { ...n.properties, [prop]: value } };
+                    return { ...n, properties: { ...n, properties: { ...n.properties, [prop]: value } } };
                 }
                 return n;
             });
@@ -347,5 +348,3 @@ export function useGraphState() {
         regenerateEdges,
     };
 }
-
-    
