@@ -82,6 +82,8 @@ export function GraphVisualization({
                 if (intersectedNode) {
                     handleNodeClick(intersectedNode.id);
                 }
+            } else {
+                 handleNodeClick(null);
             }
         };
         container.addEventListener('click', handleCanvasClick);
@@ -98,7 +100,7 @@ export function GraphVisualization({
             stateRef.current.renderer = undefined;
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [scene, world]);
+    }, [scene, world, nodes, handleNodeClick]);
 
     // Animation loop
     useEffect(() => {
@@ -272,8 +274,7 @@ export function GraphVisualization({
         
         if (clusterBy !== 'none') {
              Object.entries(clusterCenters).forEach(([value, centerVec]) => {
-                const colorKey = colorBy === 'none' ? clusterBy : colorBy;
-                const centerColor = new THREE.Color(propertyColorMap[colorKey]?.[value] || 0xaaaaaa);
+                const centerColor = new THREE.Color(propertyColorMap[clusterBy]?.[value] || 0xaaaaaa);
                 
                 const centerGeometry = new THREE.TorusGeometry(2, 0.1, 16, 100);
                 const centerMaterial = new THREE.MeshBasicMaterial({ color: centerColor, transparent: true, opacity: 0.5 });
@@ -283,7 +284,7 @@ export function GraphVisualization({
                 stateRef.current.clusterCenterMeshes.push(centerMesh);
             });
         }
-    }, [clusterCenters, clusterBy, colorBy, propertyColorMap, scene]);
+    }, [clusterCenters, clusterBy, propertyColorMap, scene]);
 
     return <div ref={containerRef} className="w-full h-full" />;
 }
