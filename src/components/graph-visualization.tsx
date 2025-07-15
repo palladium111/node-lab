@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRef, useEffect, useCallback } from 'react';
@@ -68,6 +69,9 @@ export function GraphVisualization({
         const handleCanvasClick = (event: MouseEvent) => {
             const rendererEl = stateRef.current.renderer?.domElement;
             if (!rendererEl || event.target !== rendererEl) return;
+            // Prevent click handling during a drag operation
+            if (stateRef.current.orbitControls?.state !== -1) return;
+
             const rect = rendererEl.getBoundingClientRect();
             mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
             mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -288,3 +292,5 @@ export function GraphVisualization({
 
     return <div ref={containerRef} className="w-full h-full" />;
 }
+
+    
