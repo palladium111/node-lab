@@ -102,8 +102,8 @@ export function useGraphState() {
     const [isConnecting, setIsConnecting] = useState(false);
     const [connectionStartNodeId, setConnectionStartNodeId] = useState<string | null>(null);
     const [physicsEnabled, setPhysicsEnabled] = useState(true);
-    const [clusterBy, setClusterBy] = useState('team');
-    const [colorBy, setColorBy] = useState('city');
+    const [clusterBy, _setClusterBy] = useState('team');
+    const [colorBy, _setColorBy] = useState('city');
     const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
     
     const [scene, setScene] = useState<THREE.Scene | null>(null);
@@ -113,10 +113,10 @@ export function useGraphState() {
     useEffect(() => {
         if (!scene || !world || nodes.length > 0) return;
 
-        const initialNodes = createInitialNodes(scene, world, settings);
+        const initialNodes = createInitialNodes(scene, world, defaultSettings);
         setNodes(initialNodes);
 
-        const initialEdges = createEdges(initialNodes, settings, scene);
+        const initialEdges = createEdges(initialNodes, defaultSettings, scene);
         setEdges(initialEdges);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scene, world]);
@@ -294,6 +294,15 @@ export function useGraphState() {
         });
         return centers;
     }, [nodes, clusterBy, settings.clusterLayout, settings.clusterRadius]);
+
+    const setClusterBy = useCallback((value: string) => {
+        _setClusterBy(value);
+    }, []);
+
+    const setColorBy = useCallback((value: string) => {
+        _setColorBy(value);
+    }, []);
+
 
     return {
         nodes, setNodes,
