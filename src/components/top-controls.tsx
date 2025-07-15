@@ -56,21 +56,21 @@ export function TopControls({
                     <div className="control-group">
                         <h4 className="mb-2 text-xs font-bold uppercase text-muted-foreground">Actions</h4>
                         <div className="grid grid-cols-3 gap-2">
-                            <Button variant="outline" size="sm" onClick={() => addNode()}><Plus className="mr-2 h-4 w-4" /> Add</Button>
-                            <Button variant="outline" size="sm" onClick={() => removeNode()}><Trash2 className="mr-2 h-4 w-4" /> Remove</Button>
-                            <Button variant={isConnecting ? "default" : "outline"} size="sm" onClick={() => toggleConnectionMode()}><Link className="mr-2 h-4 w-4" /> Connect</Button>
+                            <Button variant="outline" size="sm" onClick={() => addNode()}><Plus /> Add</Button>
+                            <Button variant="outline" size="sm" onClick={() => removeNode()}><Trash2 /> Remove</Button>
+                            <Button variant={isConnecting ? "default" : "outline"} size="sm" onClick={() => toggleConnectionMode()}><Link /> Connect</Button>
                             <Button variant="outline" size="sm" onClick={() => setPhysicsEnabled(!physicsEnabled)} className={cn({'text-green-500 border-green-500 hover:text-green-600': physicsEnabled})}>
-                                {physicsEnabled ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+                                {physicsEnabled ? <Pause /> : <Play />}
                                 Physics
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => setSettingsModalOpen(true)}><Settings className="mr-2 h-4 w-4" /> Settings</Button>
+                            <Button variant="outline" size="sm" onClick={() => setSettingsModalOpen(true)}><Settings /> Settings</Button>
                         </div>
                     </div>
                     <div className="control-group">
                         <h4 className="mb-2 text-xs font-bold uppercase text-muted-foreground">Export</h4>
                         <div className="grid grid-cols-2 gap-2">
-                             <Button variant="outline" size="sm" onClick={() => downloadJSON(nodes, edges)}><FileJson className="mr-2 h-4 w-4" /> JSON</Button>
-                             <Button variant="outline" size="sm" onClick={() => downloadCSV(nodes, edges)}><FileText className="mr-2 h-4 w-4" /> CSV</Button>
+                             <Button variant="outline" size="sm" onClick={() => downloadJSON(nodes, edges)}><FileJson /> JSON</Button>
+                             <Button variant="outline" size="sm" onClick={() => downloadCSV(nodes, edges)}><FileText /> CSV</Button>
                         </div>
                     </div>
                 </div>
