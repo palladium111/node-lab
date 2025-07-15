@@ -75,7 +75,7 @@ export function TopControls({
                     </div>
                 </div>
                 <div 
-                    className="h-10 bg-card-f/50 cursor-pointer flex items-center justify-center text-muted-foreground hover:bg-muted rounded-b-xl"
+                    className="h-10 bg-card/50 cursor-pointer flex items-center justify-center text-muted-foreground hover:bg-muted rounded-b-xl"
                     onClick={() => setIsCollapsed(!isCollapsed)}
                 >
                     {isCollapsed ? <ChevronDown /> : <ChevronUp />}

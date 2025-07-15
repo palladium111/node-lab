@@ -42,29 +42,27 @@ export function useGraphState() {
 
     const selectedNode = useMemo(() => nodes.find(n => n.id === selectedNodeId) || null, [nodes, selectedNodeId]);
 
-    const addNode = useCallback((scene: THREE.Scene, world: CANNON.World, name: string, properties: any) => {
+    const addNodeInternal = useCallback((scene: THREE.Scene, world: CANNON.World, name: string, properties: any, damping: number) => {
         const geometry = new THREE.SphereGeometry(1, 32, 32);
         const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
         const mesh = new THREE.Mesh(geometry, material);
         const initialPos = new THREE.Vector3((Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40);
         mesh.position.copy(initialPos);
         const shape = new CANNON.Sphere(1);
-        const physicsBody = new CANNON.Body({ mass: 1, linearDamping: settings.damping, angularDamping: settings.damping });
+        const physicsBody = new CANNON.Body({ mass: 1, linearDamping: damping, angularDamping: damping });
         physicsBody.addShape(shape);
         physicsBody.position.copy(initialPos as any);
         world.addBody(physicsBody);
         scene.add(mesh);
 
         const node: Node = { id: THREE.MathUtils.generateUUID(), name, mesh, properties, physicsBody };
-        setNodes(prev => [...prev, node]);
         return node;
-    }, [settings.damping]);
+    }, []);
     
     const regenerateEdges = useCallback(() => {
+        if(!scene) return;
         setEdges(prevEdges => {
-            if (scene) {
-                prevEdges.forEach(edge => scene.remove(edge.mesh));
-            }
+            prevEdges.forEach(edge => scene.remove(edge.mesh));
             return [];
         });
 
@@ -116,9 +114,10 @@ export function useGraphState() {
 
     useEffect(() => {
         if (isInitialized || !scene || !world) return;
-        sampleNodesData.forEach(n => addNode(scene, world, n.name, n.properties));
+        const initialNodes = sampleNodesData.map(n => addNodeInternal(scene, world, n.name, n.properties, settings.damping));
+        setNodes(initialNodes);
         setIsInitialized(true);
-    }, [scene, world, isInitialized, addNode]);
+    }, [scene, world, isInitialized, addNodeInternal, settings.damping]);
     
     useEffect(() => {
         if (!isInitialized) return;
@@ -177,10 +176,11 @@ export function useGraphState() {
 
     const handleAddNewNode = useCallback(() => {
         if (!scene || !world) return;
-        const newNode = addNode(scene, world, 'New Person', { city: 'Undefined', language: 'Undefined', team: 'Undefined' });
+        const newNode = addNodeInternal(scene, world, 'New Person', { city: 'Undefined', language: 'Undefined', team: 'Undefined' }, settings.damping);
+        setNodes(prev => [...prev, newNode]);
         setSelectedNodeId(newNode.id);
         toast({ title: "New node added" });
-    }, [scene, world, addNode, toast]);
+    }, [scene, world, addNodeInternal, toast, settings.damping]);
 
     const toggleConnectionMode = useCallback(() => {
         setIsConnecting(prev => {
