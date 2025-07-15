@@ -79,7 +79,7 @@ export function TopControls({
         <div className="absolute top-4 right-4 z-10 flex gap-2">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button size="icon" className="bg-card/80 backdrop-blur-sm border">
+                    <Button size="icon" className="bg-card/80 backdrop-blur-sm border text-foreground hover:bg-accent hover:text-accent-foreground">
                         <Share2 />
                     </Button>
                 </DropdownMenuTrigger>
@@ -122,7 +122,7 @@ export function TopControls({
 
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button size="icon" className="bg-card/80 backdrop-blur-sm border">
+                    <Button size="icon" className="bg-card/80 backdrop-blur-sm border text-foreground hover:bg-accent hover:text-accent-foreground">
                         <Settings />
                     </Button>
                 </DropdownMenuTrigger>
