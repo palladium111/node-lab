@@ -8,6 +8,7 @@ export interface Node {
   properties: { [key: string]: any };
   mesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>;
   physicsBody: CANNON.Body;
+  labelSprite?: THREE.Sprite;
 }
 
 export interface Edge {
@@ -18,6 +19,7 @@ export interface Edge {
 }
 
 export interface Settings {
+  showNodeLabels: boolean;
   clusterLayout: 'circle' | 'sphere';
   minConnections: number;
   maxConnections: number;

@@ -9,6 +9,7 @@ import { sampleNodesData } from '@/lib/data';
 import { useToast } from "@/hooks/use-toast";
 
 const defaultSettings: Settings = {
+    showNodeLabels: true,
     clusterLayout: 'circle',
     minConnections: 1,
     maxConnections: 3,
@@ -23,6 +24,34 @@ const defaultSettings: Settings = {
 };
 
 const colorPalette = [0x1f77b4, 0xff7f0e, 0x2ca02c, 0xd62728, 0x9467bd, 0x8c564b, 0xe377c2, 0x7f7f7f, 0xbcbd22, 0x17becf];
+
+function createLabelSprite(text: string) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+
+    const fontSize = 48;
+    context.font = `Bold ${fontSize}px Arial`;
+    const textMetrics = context.measureText(text);
+    const textWidth = textMetrics.width;
+
+    canvas.width = textWidth + 20; // some padding
+    canvas.height = fontSize + 10; // some padding
+
+    context.font = `Bold ${fontSize}px Arial`;
+    context.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(text, canvas.width / 2, canvas.height / 2);
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    
+    sprite.scale.set(canvas.width / 50, canvas.height / 50, 1.0);
+    return sprite;
+}
+
 
 function createInitialNodes(scene: THREE.Scene, world: CANNON.World, settings: Settings): Node[] {
     return sampleNodesData.map(n => {
@@ -43,7 +72,13 @@ function createInitialNodes(scene: THREE.Scene, world: CANNON.World, settings: S
         world.addBody(physicsBody);
         scene.add(mesh);
 
-        return { id: THREE.MathUtils.generateUUID(), name: n.name, mesh, properties: n.properties, physicsBody };
+        const labelSprite = createLabelSprite(n.name);
+        if (labelSprite) {
+            labelSprite.position.set(initialPos.x, initialPos.y + 2, initialPos.z);
+            scene.add(labelSprite);
+        }
+
+        return { id: THREE.MathUtils.generateUUID(), name: n.name, mesh, properties: n.properties, physicsBody, labelSprite };
     });
 }
 
@@ -91,7 +126,8 @@ function createEdges(nodes: Node[], settings: Settings, scene: THREE.Scene): Edg
 
             const potentialTargets = nodes.filter(nodeB => 
                 nodeA.id !== nodeB.id && 
-                (connectionCounts.get(nodeB.id) || 0) < settings.maxConnections
+                (connectionCounts.get(nodeB.id) || 0) < settings.maxConnections &&
+                !newEdges.some(e => (e.startNode.id === nodeA.id && e.endNode.id === nodeB.id) || (e.startNode.id === nodeB.id && e.endNode.id === nodeA.id))
             );
 
             if (potentialTargets.length > 0) {
@@ -198,7 +234,13 @@ export function useGraphState() {
         world.addBody(physicsBody);
         scene.add(mesh);
 
-        const node: Node = { id: THREE.MathUtils.generateUUID(), name: data.name, mesh, properties, physicsBody };
+        const labelSprite = createLabelSprite(data.name);
+        if (labelSprite) {
+            labelSprite.position.set(initialPos.x, initialPos.y + 2, initialPos.z);
+            scene.add(labelSprite);
+        }
+
+        const node: Node = { id: THREE.MathUtils.generateUUID(), name: data.name, mesh, properties, physicsBody, labelSprite };
         
         setNodes(prev => [...prev, node]);
         setSelectedNodeId(node.id);
@@ -222,6 +264,11 @@ export function useGraphState() {
                 (n.mesh.material as THREE.Material).dispose();
                 scene.remove(n.mesh);
                 if (n.physicsBody) world.removeBody(n.physicsBody);
+                if (n.labelSprite) {
+                    (n.labelSprite.material as THREE.SpriteMaterial).map?.dispose();
+                    (n.labelSprite.material as THREE.SpriteMaterial).dispose();
+                    scene.remove(n.labelSprite);
+                }
                 return false;
             }
             return true;
@@ -282,13 +329,26 @@ export function useGraphState() {
         setNodes(nodes => {
             return nodes.map(n => {
                 if (n.id === nodeId) {
-                    if (prop === 'name') return { ...n, name: value };
+                    if (prop === 'name') {
+                        if (n.labelSprite) {
+                            (n.labelSprite.material as THREE.SpriteMaterial).map?.dispose();
+                             (n.labelSprite.material as THREE.SpriteMaterial).dispose();
+                             scene?.remove(n.labelSprite);
+                        }
+                        const newLabelSprite = createLabelSprite(value);
+                        if (newLabelSprite && scene) {
+                            newLabelSprite.position.copy(n.mesh.position);
+                            newLabelSprite.position.y += 2;
+                            scene.add(newLabelSprite);
+                        }
+                        return { ...n, name: value, labelSprite: newLabelSprite };
+                    }
                     return { ...n, properties: { ...n.properties, [prop]: value } };
                 }
                 return n;
             });
         });
-    }, []);
+    }, [scene]);
 
     const updateSettings = useCallback((newSettings: Partial<Settings>) => {
         setSettings(s => {
@@ -300,6 +360,13 @@ export function useGraphState() {
                         n.physicsBody.angularDamping = newSettings.damping!;
                     }
                 });
+            }
+            if (newSettings.showNodeLabels !== undefined) {
+                nodes.forEach(n => {
+                    if(n.labelSprite) {
+                        n.labelSprite.visible = newSettings.showNodeLabels!;
+                    }
+                })
             }
             return updatedSettings;
         });

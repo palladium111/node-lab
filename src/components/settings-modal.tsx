@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
@@ -5,6 +6,7 @@ import { Label } from './ui/label';
 import { Slider } from './ui/slider';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Button } from './ui/button';
+import { Switch } from './ui/switch';
 import type { useGraphState } from '@/hooks/use-graph-state';
 import type { Settings } from '@/types';
 
@@ -38,6 +40,10 @@ export function SettingsModal({ settings, updateSettings, isSettingsModalOpen, s
                     <DialogDescription>Adjust graph generation and physics parameters. Some changes require regenerating edges.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-6 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                     <div className="flex items-center justify-between space-x-2">
+                        <Label htmlFor="show-labels-toggle">Show Node Labels</Label>
+                        <Switch id="show-labels-toggle" checked={settings.showNodeLabels} onCheckedChange={(v) => handleSettingsChange({ showNodeLabels: v })} />
+                    </div>
                      <div className="space-y-2">
                         <Label>Cluster Layout</Label>
                         <RadioGroup value={settings.clusterLayout} onValueChange={(v) => handleSettingsChange({ clusterLayout: v as 'circle' | 'sphere' })} className="flex gap-4">

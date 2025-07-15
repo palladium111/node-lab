@@ -174,6 +174,9 @@ export function GraphVisualization({
                         n.mesh.position.copy(n.physicsBody.position as any);
                         n.mesh.quaternion.copy(n.physicsBody.quaternion as any);
                     }
+                     if (n.labelSprite) {
+                        n.labelSprite.position.set(n.mesh.position.x, n.mesh.position.y + 2, n.mesh.position.z);
+                    }
                 });
             }
 
