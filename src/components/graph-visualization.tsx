@@ -103,7 +103,7 @@ export function GraphVisualization({
             stateRef.current.renderer = undefined;
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [scene, world, nodes, handleNodeClick]);
+    }, [scene, world]);
 
     // Animation loop
     useEffect(() => {
