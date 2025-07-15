@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import type { Node, Edge, Settings } from '@/types';
@@ -108,6 +108,11 @@ export function useGraphState() {
     
     const [scene, setScene] = useState<THREE.Scene | null>(null);
     const [world, setWorld] = useState<CANNON.World | null>(null);
+    const wasConnectingRef = useRef(false);
+
+    useEffect(() => {
+        wasConnectingRef.current = isConnecting;
+    }, [isConnecting]);
 
     // Initial setup
     useEffect(() => {
@@ -225,18 +230,18 @@ export function useGraphState() {
     }, [isConnecting, connectionStartNodeId, createEdge, toast, selectedNodeId]);
 
     const toggleConnectionMode = useCallback(() => {
-        setIsConnecting(prev => {
-            const next = !prev;
-            if (next) {
-                setSelectedNodeId(null);
-                toast({ title: "Connection mode enabled", description: "Select a start node." });
-            } else {
-                setConnectionStartNodeId(null);
-                toast({ title: "Connection mode disabled" });
-            }
-            return next;
-        });
-    }, [toast]);
+        const nextIsConnecting = !isConnecting;
+        setIsConnecting(nextIsConnecting);
+
+        if (nextIsConnecting) {
+            setSelectedNodeId(null);
+            setConnectionStartNodeId(null);
+            toast({ title: "Connection mode enabled", description: "Select a start node." });
+        } else {
+            setConnectionStartNodeId(null);
+            toast({ title: "Connection mode disabled" });
+        }
+    }, [isConnecting, toast]);
 
     const updateNodeProperty = useCallback((nodeId: string, prop: string, value: any) => {
         setNodes(nodes => {
