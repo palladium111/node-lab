@@ -36,7 +36,7 @@ export function SettingsModal({ settings, updateSettings, isSettingsModalOpen, s
         <Dialog open={isSettingsModalOpen} onOpenChange={setSettingsModalOpen}>
             <DialogContent className="sm:max-w-[450px]">
                 <DialogHeader>
-                    <DialogTitle>Settings</DialogTitle>
+                    <DialogTitle>Physics & Generation Settings</DialogTitle>
                     <DialogDescription>Adjust graph generation and physics parameters. Some changes require regenerating edges.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-6 py-4 max-h-[70vh] overflow-y-auto pr-4">
