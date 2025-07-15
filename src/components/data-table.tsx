@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Input } from './ui/input';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -29,7 +29,7 @@ export function DataTable({ nodes, edges, selectedNode, setSelectedNodeId, updat
                 {isCollapsed ? <ChevronUp /> : <ChevronDown />}
             </div>
             <div className="h-[35vh] overflow-auto bg-card/80 backdrop-blur-sm">
-                <Table>
+                <table className="w-full caption-bottom text-sm">
                     <TableHeader className="sticky top-0 bg-card/90 z-10">
                         <TableRow>
                             <TableHead>Name</TableHead>
@@ -61,7 +61,7 @@ export function DataTable({ nodes, edges, selectedNode, setSelectedNodeId, updat
                              )
                         })}
                     </TableBody>
-                </Table>
+                </table>
             </div>
         </div>
     );
