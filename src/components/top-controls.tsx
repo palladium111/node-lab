@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Slider } from './ui/slider';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Plus, Trash2, Link, Play, Pause, Settings, FileJson, FileText, Text, BrainCircuit, SlidersHorizontal, Share2, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Link, Play, Pause, Settings, FileJson, FileText, Text, BrainCircuit, SlidersHorizontal, Menu, RefreshCw } from 'lucide-react';
 import { downloadJSON, downloadCSV } from '@/lib/export';
 import type { useGraphState } from '@/hooks/use-graph-state';
 import type { Settings } from '@/types';
@@ -80,7 +80,7 @@ export function TopControls({
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button size="icon" className="bg-card/80 backdrop-blur-sm border text-foreground hover:bg-accent hover:text-accent-foreground">
-                        <Share2 />
+                        <Menu />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
