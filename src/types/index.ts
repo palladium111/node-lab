@@ -1,3 +1,4 @@
+
 import type * as THREE from 'three';
 import type * as CANNON from 'cannon-es';
 
@@ -5,7 +6,7 @@ export interface Node {
   id: string;
   name: string;
   properties: { [key: string]: any };
-  mesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshPhongMaterial>;
+  mesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>;
   physicsBody: CANNON.Body;
 }
 

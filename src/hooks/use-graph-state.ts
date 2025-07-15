@@ -27,8 +27,11 @@ const colorPalette = [0x1f77b4, 0xff7f0e, 0x2ca02c, 0xd62728, 0x9467bd, 0x8c564b
 function createInitialNodes(scene: THREE.Scene, world: CANNON.World, settings: Settings): Node[] {
     return sampleNodesData.map(n => {
         const geometry = new THREE.SphereGeometry(1, 32, 32);
-        const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
+        const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.1 });
         const mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
         const initialPos = new THREE.Vector3((Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40);
         mesh.position.copy(initialPos);
         
@@ -69,27 +72,43 @@ function createEdges(nodes: Node[], settings: Settings, scene: THREE.Scene): Edg
 
     // --- Phase 1: Enforce Minimum Connections ---
     let attempts = 0;
-    const maxAttempts = nodes.length * settings.minConnections * 2; // A reasonable upper bound
+    const maxAttempts = nodes.length * nodes.length; // Safety break
 
-    while (attempts < maxAttempts) {
+    while(attempts < maxAttempts) {
         let allNodesMeetMin = true;
-        for (const nodeA of nodes) {
-            if ((connectionCounts.get(nodeA.id) || 0) < settings.minConnections) {
-                allNodesMeetMin = false;
-                const potentialTargets = nodes.filter(nodeB => 
-                    nodeA.id !== nodeB.id && 
-                    (connectionCounts.get(nodeB.id) || 0) < settings.maxConnections
-                );
+        
+        // Find all nodes that are below the minimum connection count
+        const nodesBelowMin = nodes.filter(n => (connectionCounts.get(n.id) || 0) < settings.minConnections);
 
-                if (potentialTargets.length > 0) {
-                    const targetNode = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
-                    createEdgeInternal(nodeA, targetNode);
+        if(nodesBelowMin.length === 0) {
+            break; // All nodes meet the minimum, exit loop
+        }
+        allNodesMeetMin = false;
+        
+        for (const nodeA of nodesBelowMin) {
+            // Check again in case it was connected in a previous iteration of this loop
+            if ((connectionCounts.get(nodeA.id) || 0) >= settings.minConnections) continue;
+
+            const potentialTargets = nodes.filter(nodeB => 
+                nodeA.id !== nodeB.id && 
+                (connectionCounts.get(nodeB.id) || 0) < settings.maxConnections
+            );
+
+            if (potentialTargets.length > 0) {
+                // Try to find a target that is also below min connections first
+                let targetNode = potentialTargets.find(n => (connectionCounts.get(n.id) || 0) < settings.minConnections);
+                // If not found, pick a random one
+                if (!targetNode) {
+                    targetNode = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
                 }
+                createEdgeInternal(nodeA, targetNode);
             }
         }
+        
         if (allNodesMeetMin) break;
         attempts++;
     }
+
 
     // --- Phase 2: Add Affinity-Based Connections ---
     for (let i = 0; i < nodes.length; i++) {
@@ -131,7 +150,7 @@ export function useGraphState() {
     useEffect(() => {
         if (scene && world) return; // Only run once
         const localScene = new THREE.Scene();
-        localScene.background = new THREE.Color(0x1F2937);
+        localScene.background = new THREE.Color(0x111827); // Darker background
         const localWorld = new CANNON.World();
         localWorld.gravity.set(0, 0, 0);
         localWorld.broadphase = new CANNON.NaiveBroadphase();
@@ -165,8 +184,10 @@ export function useGraphState() {
         const properties = { city: 'Undefined', language: 'Undefined', team: 'Undefined' };
 
         const geometry = new THREE.SphereGeometry(1, 32, 32);
-        const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
+        const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.1 });
         const mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         const initialPos = new THREE.Vector3((Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40);
         mesh.position.copy(initialPos);
         const shape = new CANNON.Sphere(1);
@@ -260,7 +281,7 @@ export function useGraphState() {
             return nodes.map(n => {
                 if (n.id === nodeId) {
                     if (prop === 'name') return { ...n, name: value };
-                    return { ...n, properties: { ...n, properties: { ...n.properties, [prop]: value } } };
+                    return { ...n, properties: { ...n.properties, [prop]: value } };
                 }
                 return n;
             });

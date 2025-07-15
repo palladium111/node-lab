@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRef, useEffect, useCallback } from 'react';
@@ -20,6 +21,7 @@ export function GraphVisualization({
     scene, world, handleNodeClick,
 }: GraphState) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const isDraggingRef = useRef(false);
     const stateRef = useRef<{
         camera?: THREE.PerspectiveCamera,
         renderer?: THREE.WebGLRenderer,
@@ -42,14 +44,27 @@ export function GraphVisualization({
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
         stateRef.current.renderer = renderer;
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(5, 10, 7.5);
-        scene.add(directionalLight);
+        const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
+        hemisphereLight.position.set(0, 50, 0);
+        scene.add(hemisphereLight);
+
+        const mainLight = new THREE.DirectionalLight(0xffffff, 2.5);
+        mainLight.position.set(10, 20, 15);
+        mainLight.castShadow = true;
+        mainLight.shadow.mapSize.width = 2048;
+        mainLight.shadow.mapSize.height = 2048;
+        mainLight.shadow.camera.near = 0.5;
+        mainLight.shadow.camera.far = 500;
+        scene.add(mainLight);
+
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        fillLight.position.set(-10, -5, -10);
+        scene.add(fillLight);
 
         const orbitControls = new OrbitControls(camera, renderer.domElement);
         orbitControls.enableDamping = true;
@@ -72,6 +87,8 @@ export function GraphVisualization({
             
             // This is now just for deselecting when clicking empty space
             if (stateRef.current.orbitControls?.state !== -1) return;
+            // Prevent deselection while dragging
+            if (isDraggingRef.current) return;
 
             const rect = rendererEl.getBoundingClientRect();
             mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -195,8 +212,6 @@ export function GraphVisualization({
         if (nodeObjects.length > 0) {
             const dragControls = new DragControls(nodeObjects, stateRef.current.camera, stateRef.current.renderer.domElement);
             
-            const isDraggingRef = { current: false };
-
             dragControls.addEventListener('dragstart', (e) => {
                 isDraggingRef.current = false;
                 if(stateRef.current.orbitControls) stateRef.current.orbitControls.enabled = false;
@@ -222,7 +237,6 @@ export function GraphVisualization({
                     node.physicsBody.type = CANNON.Body.DYNAMIC;
                     node.physicsBody.wakeUp();
                 }
-                // If it was just a click (no drag), we still need to select the node
                 if (!isDraggingRef.current && node) {
                     handleNodeClick(node.id);
                 }
@@ -244,7 +258,7 @@ export function GraphVisualization({
             // Color
             const value = node.properties[colorBy];
             const color = colorBy === 'none' ? 0xcccccc : (propertyColorMap[colorBy]?.[value] || 0x4b5563);
-            (node.mesh.material as THREE.MeshPhongMaterial).color.set(color);
+            (node.mesh.material as THREE.MeshStandardMaterial).color.set(color);
 
             // Scale
             const scale = selectedNode?.id === node.id ? 1.5 : 1;
