@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -34,26 +35,26 @@ export function useGraphState() {
     const [physicsEnabled, setPhysicsEnabled] = useState(true);
     const [clusterBy, setClusterBy] = useState('team');
     const [colorBy, setColorBy] = useState('city');
-    const [propertyColorMap, setPropertyColorMap] = useState<Record<string, Record<string, string>>>({});
+    const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
+    
     const [scene, setScene] = useState<THREE.Scene | null>(null);
     const [world, setWorld] = useState<CANNON.World | null>(null);
-    const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
 
     const selectedNode = useMemo(() => nodes.find(n => n.id === selectedNodeId) || null, [nodes, selectedNodeId]);
     
-    const regenerateEdges = useCallback((currentNodes: Node[], currentSettings: Settings) => {
-        if(!scene) return [];
+    const regenerateEdges = useCallback((currentNodes: Node[], currentSettings: Settings, targetScene: THREE.Scene) => {
+        if(!targetScene) return [];
         
         let newEdges: Edge[] = [];
         let connectionCounts = new Map<string, number>();
         currentNodes.forEach(n => connectionCounts.set(n.id, 0));
 
         const createEdgeInternal = (nodeA: Node, nodeB: Node) => {
-             if (!scene || !nodeA || !nodeB || nodeA === nodeB || newEdges.some(e => (e.startNode.id === nodeA.id && e.endNode.id === nodeB.id) || (e.startNode.id === nodeB.id && e.endNode.id === nodeA.id))) return;
+             if (!targetScene || !nodeA.mesh || !nodeB.mesh || nodeA === nodeB || newEdges.some(e => (e.startNode.id === nodeA.id && e.endNode.id === nodeB.id) || (e.startNode.id === nodeB.id && e.endNode.id === nodeA.id))) return;
             const material = new THREE.LineBasicMaterial({ color: 0x9ca3af, linewidth: 1, transparent: true, opacity: 0.7 });
             const geometry = new THREE.BufferGeometry().setFromPoints([nodeA.mesh.position, nodeB.mesh.position]);
             const line = new THREE.Line(geometry, material);
-            scene.add(line);
+            targetScene.add(line);
             newEdges.push({ id: THREE.MathUtils.generateUUID(), startNode: nodeA, endNode: nodeB, mesh: line });
             connectionCounts.set(nodeA.id, (connectionCounts.get(nodeA.id) || 0) + 1);
             connectionCounts.set(nodeB.id, (connectionCounts.get(nodeB.id) || 0) + 1);
@@ -88,7 +89,7 @@ export function useGraphState() {
             }
         }
         return newEdges;
-    }, [scene]);
+    }, []);
 
     // Initial setup
     useEffect(() => {
@@ -113,7 +114,7 @@ export function useGraphState() {
         });
 
         setNodes(initialNodes);
-        const initialEdges = regenerateEdges(initialNodes, settings);
+        const initialEdges = regenerateEdges(initialNodes, settings, scene);
         setEdges(initialEdges);
     }, [scene, world, settings, regenerateEdges, nodes.length]);
 
@@ -231,22 +232,32 @@ export function useGraphState() {
         });
     }, [nodes]);
     
-    useEffect(() => {
-        const uniqueValues = Array.from(new Set(nodes.map(n => n.properties[colorBy]).filter(v => v !== undefined)));
-        if(colorBy !== 'none') {
-            setPropertyColorMap(prevMap => {
-                const newMap = { ...prevMap };
-                if (!newMap[colorBy]) {
-                    newMap[colorBy] = {};
+    const propertyColorMap = useMemo(() => {
+        const map: Record<string, Record<string, string>> = {};
+        if (colorBy === 'none') return map;
+
+        const uniqueValues = new Map<string, string[]>();
+        nodes.forEach(n => {
+            const value = n.properties[colorBy];
+            if (value !== undefined) {
+                if (!uniqueValues.has(colorBy)) {
+                    uniqueValues.set(colorBy, []);
                 }
-                uniqueValues.forEach((value, index) => {
-                    if (!newMap[colorBy][value]) {
-                        newMap[colorBy][value] = '#' + colorPalette[index % colorPalette.length].toString(16).padStart(6, '0');
-                    }
-                });
-                return newMap;
+                if (!uniqueValues.get(colorBy)!.includes(value)) {
+                    uniqueValues.get(colorBy)!.push(value);
+                }
+            }
+        });
+
+        if (uniqueValues.has(colorBy)) {
+             map[colorBy] = {};
+             uniqueValues.get(colorBy)!.forEach((value, index) => {
+                map[colorBy][value] = '#' + colorPalette[index % colorPalette.length].toString(16).padStart(6, '0');
             });
         }
+        
+        return map;
+
     }, [nodes, colorBy]);
 
     const clusterCenters = useMemo(() => {
@@ -277,8 +288,9 @@ export function useGraphState() {
     }, [nodes, clusterBy, settings.clusterLayout, settings.clusterRadius]);
 
     const doRegenerateEdges = useCallback(() => {
+        if (!scene) return;
         edges.forEach(edge => scene?.remove(edge.mesh));
-        const newEdges = regenerateEdges(nodes, settings);
+        const newEdges = regenerateEdges(nodes, settings, scene);
         setEdges(newEdges);
     }, [nodes, edges, scene, regenerateEdges, settings]);
     
@@ -292,7 +304,7 @@ export function useGraphState() {
         physicsEnabled, setPhysicsEnabled,
         clusterBy, setClusterBy,
         colorBy, setColorBy,
-        propertyColorMap, setPropertyColorMap,
+        propertyColorMap,
         scene, setScene,
         world, setWorld,
         isSettingsModalOpen, setSettingsModalOpen,
@@ -304,3 +316,5 @@ export function useGraphState() {
         regenerateEdges: doRegenerateEdges
     };
 }
+
+    
