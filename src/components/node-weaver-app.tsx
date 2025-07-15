@@ -8,12 +8,14 @@ import { PropertiesPanel } from './properties-panel';
 import { DataTable } from './data-table';
 import { SettingsModal } from './settings-modal';
 import { AddNodeModal } from './add-node-modal';
+import { LeftControls } from './left-controls';
 
 export function NodeWeaverApp() {
     const graphState = useGraphState();
 
     return (
         <div className="w-screen h-screen relative">
+            <LeftControls {...graphState} />
             <TopControls {...graphState} />
 
             <GraphVisualization {...graphState} />
