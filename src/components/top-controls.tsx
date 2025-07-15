@@ -55,15 +55,14 @@ export function TopControls({
                     </div>
                     <div className="control-group">
                         <h4 className="mb-2 text-xs font-bold uppercase text-muted-foreground">Actions</h4>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                             <Button variant="outline" onClick={() => addNode()}><Plus /> Add</Button>
                             <Button variant="outline" onClick={() => removeNode()}><Trash2 /> Remove</Button>
-                            <Button variant={isConnecting ? "default" : "outline"} onClick={() => toggleConnectionMode()}><Link /> Connect</Button>
+                            <Button variant={isConnecting ? "default" : "outline"} onClick={() => toggleConnectionMode()}><Link /></Button>
                             <Button variant="outline" onClick={() => setPhysicsEnabled(!physicsEnabled)} className={cn({'text-green-500 border-green-500 hover:text-green-600': physicsEnabled})}>
                                 {physicsEnabled ? <Pause /> : <Play />}
-                                Physics
                             </Button>
-                            <Button variant="outline" onClick={() => setSettingsModalOpen(true)}><Settings /> Settings</Button>
+                            <Button variant="outline" onClick={() => setSettingsModalOpen(true)}><Settings /></Button>
                         </div>
                     </div>
                     <div className="control-group">
