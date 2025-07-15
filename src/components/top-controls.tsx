@@ -15,8 +15,8 @@ const allProperties = ['city', 'language', 'team'];
 
 export function TopControls({
     nodes, edges, clusterBy, setClusterBy, colorBy, setColorBy, propertyColorMap,
-    addNode, removeNode, toggleConnectionMode, isConnecting,
-    physicsEnabled, setPhysicsEnabled, setSettingsModalOpen
+    removeNode, toggleConnectionMode, isConnecting,
+    physicsEnabled, setPhysicsEnabled, setSettingsModalOpen, setAddNodeModalOpen
 }: TopControlsProps) {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -57,7 +57,7 @@ export function TopControls({
                     <div className="control-group">
                         <h4 className="mb-2 text-xs font-bold uppercase text-muted-foreground">Actions</h4>
                         <div className="grid grid-cols-2 gap-2">
-                            <Button variant="outline" size="default" onClick={() => addNode()}><Plus /> Add</Button>
+                            <Button variant="outline" size="default" onClick={() => setAddNodeModalOpen(true)}><Plus /> Add</Button>
                             <Button variant="outline" size="default" onClick={() => removeNode()}><Trash2 /> Remove</Button>
                             <Button variant={isConnecting ? "default" : "outline"} size="default" onClick={() => toggleConnectionMode()}><Link /></Button>
                             <Button variant="outline" size="default" onClick={() => setPhysicsEnabled(!physicsEnabled)} className={cn({'text-green-500 border-green-500 hover:text-green-600': physicsEnabled})}>

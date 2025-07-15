@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useGraphState } from '@/hooks/use-graph-state';
@@ -6,6 +7,7 @@ import { TopControls } from './top-controls';
 import { PropertiesPanel } from './properties-panel';
 import { DataTable } from './data-table';
 import { SettingsModal } from './settings-modal';
+import { AddNodeModal } from './add-node-modal';
 
 export function NodeWeaverApp() {
     const graphState = useGraphState();
@@ -21,6 +23,12 @@ export function NodeWeaverApp() {
             <DataTable {...graphState} />
 
             <SettingsModal {...graphState} />
+
+            <AddNodeModal
+                isOpen={graphState.isAddNodeModalOpen}
+                onOpenChange={graphState.setAddNodeModalOpen}
+                addNode={graphState.addNode}
+            />
         </div>
     );
 }

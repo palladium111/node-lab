@@ -142,6 +142,7 @@ export function useGraphState() {
     const [clusterBy, setClusterBy] = useState('city');
     const [colorBy, setColorBy] = useState('language');
     const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
+    const [isAddNodeModalOpen, setAddNodeModalOpen] = useState(false);
     
     const [scene, setScene] = useState<THREE.Scene | null>(null);
     const [world, setWorld] = useState<CANNON.World | null>(null);
@@ -178,10 +179,10 @@ export function useGraphState() {
     
     const selectedNode = useMemo(() => nodes.find(n => n.id === selectedNodeId) || null, [nodes, selectedNodeId]);
 
-    const addNode = useCallback(() => {
+    const addNode = useCallback((data: { name: string, city: string, language: string, team: string }) => {
         if (!scene || !world) return;
-        const name = 'New Person';
-        const properties = { city: 'Undefined', language: 'Undefined', team: 'Undefined' };
+        
+        const properties = { city: data.city, language: data.language, team: data.team };
 
         const geometry = new THREE.SphereGeometry(1, 32, 32);
         const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.1 });
@@ -197,11 +198,11 @@ export function useGraphState() {
         world.addBody(physicsBody);
         scene.add(mesh);
 
-        const node: Node = { id: THREE.MathUtils.generateUUID(), name, mesh, properties, physicsBody };
+        const node: Node = { id: THREE.MathUtils.generateUUID(), name: data.name, mesh, properties, physicsBody };
         
         setNodes(prev => [...prev, node]);
         setSelectedNodeId(node.id);
-        toast({ title: "New node added" });
+        toast({ title: `Node "${data.name}" added successfully.` });
     }, [scene, world, settings.damping, toast]);
 
     const removeNode = useCallback(() => {
@@ -246,6 +247,7 @@ export function useGraphState() {
             if (!nodeId) { // Clicked on empty space, cancel connection
                  setIsConnecting(false);
                  setConnectionStartNodeId(null);
+                 toast({ title: "Connection mode cancelled." });
                  return;
             }
             if (!connectionStartNodeId) {
@@ -361,6 +363,7 @@ export function useGraphState() {
         scene, setScene,
         world, setWorld,
         isSettingsModalOpen, setSettingsModalOpen,
+        isAddNodeModalOpen, setAddNodeModalOpen,
         clusterCenters,
         addNode, removeNode, createEdge,
         handleNodeClick,
