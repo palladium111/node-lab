@@ -179,6 +179,8 @@ export function useGraphState() {
     const [colorBy, setColorBy] = useState('language');
     const [isAddNodeModalOpen, setAddNodeModalOpen] = useState(false);
     
+    const [propertyColorMap, setPropertyColorMap] = useState<Record<string, Record<string, string>>>({});
+    
     const [scene, setScene] = useState<THREE.Scene | null>(null);
     const [world, setWorld] = useState<CANNON.World | null>(null);
     
@@ -370,24 +372,57 @@ export function useGraphState() {
             return updatedSettings;
         });
     }, [nodes]);
-    
-    const propertyColorMap = useMemo(() => {
-        const map: Record<string, Record<string, string>> = {};
+
+    const updatePropertyColor = useCallback((property: string, value: string, color: string) => {
+        setPropertyColorMap(prevMap => ({
+            ...prevMap,
+            [property]: {
+                ...prevMap[property],
+                [value]: color
+            }
+        }));
+    }, []);
+
+    useEffect(() => {
+        const newColorMap: Record<string, Record<string, string>> = {};
         const allProperties = ['city', 'language', 'team'];
 
         allProperties.forEach(prop => {
             const uniqueValues = Array.from(new Set(nodes.map(n => n.properties[prop]).filter(v => v !== undefined)));
             if (uniqueValues.length > 0) {
-                map[prop] = {};
+                newColorMap[prop] = {};
                 uniqueValues.forEach((value, index) => {
-                    map[prop][value] = '#' + colorPalette[index % colorPalette.length].toString(16).padStart(6, '0');
+                    const existingColor = propertyColorMap[prop]?.[value];
+                    newColorMap[prop][value] = existingColor || '#' + colorPalette[index % colorPalette.length].toString(16).padStart(6, '0');
                 });
             }
         });
         
-        return map;
+        setPropertyColorMap(newColorMap);
     }, [nodes]);
 
+    useEffect(() => {
+        if (colorBy === 'none') {
+            nodes.forEach(node => {
+                (node.mesh.material as THREE.MeshStandardMaterial).color.set(0xffffff);
+            });
+        } else {
+            nodes.forEach(node => {
+                const propertyValue = node.properties[colorBy];
+                if (propertyValue) {
+                    const color = propertyColorMap[colorBy]?.[propertyValue];
+                    if (color) {
+                        (node.mesh.material as THREE.MeshStandardMaterial).color.set(color);
+                    } else {
+                         (node.mesh.material as THREE.MeshStandardMaterial).color.set(0xffffff); // Default
+                    }
+                } else {
+                     (node.mesh.material as THREE.MeshStandardMaterial).color.set(0xffffff); // Default
+                }
+            });
+        }
+    }, [nodes, colorBy, propertyColorMap]);
+    
     const clusterCenters = useMemo(() => {
         const centers: { [key: string]: CANNON.Vec3 } = {};
         if (clusterBy === 'none') return centers;
@@ -426,6 +461,7 @@ export function useGraphState() {
         clusterBy, setClusterBy,
         colorBy, setColorBy,
         propertyColorMap,
+        updatePropertyColor,
         scene, setScene,
         world, setWorld,
         isAddNodeModalOpen, setAddNodeModalOpen,

@@ -6,7 +6,7 @@ import type { useGraphState } from '@/hooks/use-graph-state';
 
 type LeftControlsProps = Pick<
   ReturnType<typeof useGraphState>,
-  'clusterBy' | 'setClusterBy' | 'colorBy' | 'setColorBy' | 'propertyColorMap'
+  'clusterBy' | 'setClusterBy' | 'colorBy' | 'setColorBy' | 'propertyColorMap' | 'updatePropertyColor'
 >;
 
 const allProperties = ['city', 'language', 'team'];
@@ -17,6 +17,7 @@ export function LeftControls({
   colorBy,
   setColorBy,
   propertyColorMap,
+  updatePropertyColor,
 }: LeftControlsProps) {
   return (
     <div className="absolute top-4 left-4 z-10 w-64 space-y-4">
@@ -56,15 +57,14 @@ export function LeftControls({
               ))}
             </SelectContent>
           </Select>
-          <div className="mt-2 max-h-24 overflow-y-auto space-y-1">
+          <div className="mt-2 space-y-2">
             {colorBy !== 'none' &&
               Object.entries(propertyColorMap[colorBy] || {}).map(
                 ([value, color]) => (
                   <div key={value} className="flex items-center gap-2">
-                    <div
-                      className="w-4 h-4 rounded-full border"
-                      style={{ backgroundColor: color as string }}
-                    />
+                    <div className="color-picker-wrapper" style={{ backgroundColor: color as string }}>
+                        <input type="color" value={color as string} onChange={(e) => updatePropertyColor(colorBy, value, e.target.value)} />
+                    </div>
                     <span className="text-sm text-muted-foreground">
                       {value}
                     </span>

@@ -145,21 +145,21 @@ export function TopControls({
                                 <span>Physics</span>
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent className="w-64 p-2 space-y-4 bg-card/80 backdrop-blur-sm">
-                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <div onSelect={(e) => e.preventDefault()}>
                                     <SliderControl label="Cluster Attraction" id="attraction" value={settings.clusterAttraction} min={0} max={3} step={0.1} onValueChange={(v:any) => handleSettingsChange({ clusterAttraction: v })} displayTransform={(v:any) => v.toFixed(2)} />
-                                </DropdownMenuItem>
-                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                </div>
+                                <div onSelect={(e) => e.preventDefault()}>
                                     <SliderControl label="Node Repulsion" id="repulsion" value={settings.repulsionStrength} min={0} max={50} step={1} onValueChange={(v:any) => handleSettingsChange({ repulsionStrength: v })} displayTransform={(v:any) => v.toFixed(2)} />
-                                </DropdownMenuItem>
-                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                </div>
+                                <div onSelect={(e) => e.preventDefault()}>
                                     <SliderControl label="Connection Length" id="conn-length" value={settings.connectionLength} min={1} max={20} step={1} onValueChange={(v:any) => handleSettingsChange({ connectionLength: v })} displayTransform={(v:any) => v.toFixed(2)} />
-                                </DropdownMenuItem>
-                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                </div>
+                                <div onSelect={(e) => e.preventDefault()}>
                                     <SliderControl label="Connection Stiffness" id="conn-stiffness" value={settings.connectionStiffness} min={1} max={100} step={1} onValueChange={(v:any) => handleSettingsChange({ connectionStiffness: v })} displayTransform={(v:any) => v.toFixed(2)} />
-                                </DropdownMenuItem>
-                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                </div>
+                                <div onSelect={(e) => e.preventDefault()}>
                                     <SliderControl label="Damping (Friction)" id="damping" value={settings.damping} min={0.5} max={0.99} step={0.01} onValueChange={(v:any) => handleSettingsChange({ damping: v })} displayTransform={(v:any) => v.toFixed(2)} />
-                                </DropdownMenuItem>
+                                </div>
                             </DropdownMenuSubContent>
                         </DropdownMenuSub>
 
@@ -169,7 +169,7 @@ export function TopControls({
                                 <span>Generation</span>
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent className="w-64 p-2 space-y-4 bg-card/80 backdrop-blur-sm">
-                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <div onSelect={(e) => e.preventDefault()}>
                                     <div className="px-2 w-full space-y-2">
                                         <Label className="text-xs">Cluster Layout</Label>
                                         <RadioGroup value={settings.clusterLayout} onValueChange={(v) => handleSettingsChange({ clusterLayout: v as 'circle' | 'sphere' })} className="flex gap-4">
@@ -183,24 +183,24 @@ export function TopControls({
                                             </div>
                                         </RadioGroup>
                                     </div>
-                                </DropdownMenuItem>
-                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                </div>
+                                <div onSelect={(e) => e.preventDefault()}>
                                     <SliderControl label="Min Connections / Node" id="min-conn" value={settings.minConnections} min={0} max={10} step={1} onValueChange={(v:any) => handleSettingsChange({ minConnections: v })} displayTransform={(v:any) => v} />
-                                </DropdownMenuItem>
-                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                </div>
+                                <div onSelect={(e) => e.preventDefault()}>
                                     <SliderControl label="Max Connections / Node" id="max-conn" value={settings.maxConnections} min={0} max={10} step={1} onValueChange={(v:any) => handleSettingsChange({ maxConnections: v })} displayTransform={(v:any) => v} />
-                                </DropdownMenuItem>
-                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                </div>
+                                <div onSelect={(e) => e.preventDefault()}>
                                     <SliderControl label="City Connection Affinity" id="city-affinity" value={settings.cityAffinity * 100} min={0} max={100} step={1} onValueChange={(v:any) => handleSettingsChange({ cityAffinity: v / 100 })} displayTransform={(v:any) => `${v.toFixed(0)}%`} />
-                                </DropdownMenuItem>
-                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                </div>
+                                <div onSelect={(e) => e.preventDefault()}>
                                     <SliderControl label="Language Connection Affinity" id="lang-affinity" value={settings.languageAffinity * 100} min={0} max={100} step={1} onValueChange={(v:any) => handleSettingsChange({ languageAffinity: v / 100 })} displayTransform={(v:any) => `${v.toFixed(0)}%`} />
-                                </DropdownMenuItem>
-                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                </div>
+                                <div onSelect={(e) => e.preventDefault()}>
                                     <SliderControl label="Cluster Spacing" id="spacing" value={settings.clusterRadius} min={5} max={50} step={1} onValueChange={(v:any) => handleSettingsChange({ clusterRadius: v })} displayTransform={(v:any) => v.toFixed(2)} />
-                                </DropdownMenuItem>
+                                </div>
                                 <DropdownMenuSeparator />
-                               <DropdownMenuItem onClick={handleRegenerate}>
+                                <DropdownMenuItem onClick={handleRegenerate}>
                                     <RefreshCw className="mr-2 h-4 w-4" />
                                     <span>Regenerate Edges</span>
                                 </DropdownMenuItem>
